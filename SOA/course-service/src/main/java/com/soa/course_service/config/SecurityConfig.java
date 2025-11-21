@@ -26,6 +26,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").permitAll()
                         .requestMatchers("/images/**", "/videos/**").permitAll()
                         .requestMatchers("/hls/**", "/images/**").permitAll()
+
                         // SỬA LỖI BẢO MẬT: Mọi request khác đều phải được xác thực
                         .anyRequest().authenticated()); //
 

@@ -1,41 +1,16 @@
 package com.soa.course_service.dto;
 
-public class ExerciseResponseDTO {
+import com.soa.course_service.entity.ExerciseType;
+import lombok.Data;
 
+@Data
+public class ExerciseResponseDTO {
     private Long id;
     private String title;
     private String description;
-    private Long courseId;
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public Long getCourseId() {
-        return courseId;
-    }
-
-    public void setCourseId(Long courseId) {
-        this.courseId = courseId;
-    }
+    private String questionUrl;
+    private ExerciseType type;
+    private Boolean isFree;
+    private Long videoId;
+    private Long courseId; // Để biết bài này của khóa nào (nếu có)
 }

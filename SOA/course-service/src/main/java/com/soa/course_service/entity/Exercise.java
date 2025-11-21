@@ -20,7 +20,19 @@ public class Exercise {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    private String questionUrl;
+
+    @Enumerated(EnumType.STRING)
+    private ExerciseType type;
+
+    private Boolean isFree = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     private Section section;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "video_id")
+    private Video video;
+
 }

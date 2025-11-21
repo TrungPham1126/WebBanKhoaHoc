@@ -17,7 +17,8 @@ public class WebConfig implements WebMvcConfigurer {
         // Cấu hình: Khi truy cập /hls/** -> tìm trong thư mục uploads/hls/
         registry.addResourceHandler("/hls/**")
                 .addResourceLocations("file:" + uploadPath + "/hls/");
-
+        registry.addResourceHandler("/exercises/**")
+                .addResourceLocations("file:" + uploadPath + "/exercises/");
         // Cấu hình cho ảnh
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("file:" + uploadPath + "/images/");
