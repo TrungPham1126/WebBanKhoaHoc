@@ -90,6 +90,7 @@ public class AuthServiceImpl implements AuthService {
         user.setEmail(dto.getEmail());
         user.setPhoneNumber(dto.getPhoneNumber());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setBio(dto.getBio());
         return user;
     }
 
@@ -100,6 +101,10 @@ public class AuthServiceImpl implements AuthService {
         dto.setEmail(user.getEmail());
         dto.setPhoneNumber(user.getPhoneNumber());
         dto.setRoles(user.getRoles().stream().map(r -> r.getName().name()).collect(Collectors.toSet()));
+        dto.setBio(user.getBio());
+        dto.setRoles(user.getRoles().stream()
+                .map(r -> r.getName().name())
+                .collect(Collectors.toSet()));
         return dto;
     }
 }

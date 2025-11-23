@@ -5,6 +5,7 @@ public class RegisterRequestDTO {
     private String email;
     private String password;
     private String phoneNumber;
+    private String bio;
 
     public String getFullName() {
         return fullName;
@@ -36,5 +37,12 @@ public class RegisterRequestDTO {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
     }
 }

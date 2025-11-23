@@ -1,0 +1,89 @@
+package com.soa.user_service.service.impl;
+
+import com.soa.user_service.dto.UserResponseDTO;
+import com.soa.user_service.dto.UserUpdateRequestDTO;
+import com.soa.user_service.entity.User;
+import com.soa.user_service.exception.ResourceNotFoundException;
+import com.soa.user_service.repository.UserRepository;
+import com.soa.user_service.service.UserService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+
+    @Override
+    public List<UserResponseDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserResponseDTO getUserById(Long id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user với ID: " + id));
+        return convertToDTO(user);
+    }
+
+    @Override
+    public UserResponseDTO getMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user với email: " + email));
+        return convertToDTO(user);
+    }
+
+    @Override
+    @Transactional
+    public UserResponseDTO updateProfile(String email, UserUpdateRequestDTO updateRequest) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user: " + email));
+
+        // Chỉ cập nhật các trường cho phép
+        if (updateRequest.getFullName() != null) {
+            user.setFullName(updateRequest.getFullName());
+        }
+        if (updateRequest.getPhoneNumber() != null) {
+            user.setPhoneNumber(updateRequest.getPhoneNumber());
+        }
+        if (updateRequest.getBio() != null) {
+            user.setBio(updateRequest.getBio());
+        }
+
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    @Override
+    public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Không tìm thấy user để xóa với ID: " + id);
+        }
+        userRepository.deleteById(id);
+    }
+
+    // Helper function để chuyển Entity -> DTO
+    private UserResponseDTO convertToDTO(User user) {
+        UserResponseDTO dto = new UserResponseDTO();
+        dto.setId(user.getId());
+        dto.setFullName(user.getFullName());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        // dto.setBio(user.getBio()); // Bạn cần thêm field bio vào UserResponseDTO nếu muốn trả về
+        
+        // Convert Roles Set<Entity> -> Set<String>
+        if (user.getRoles() != null) {
+            dto.setRoles(user.getRoles().stream()
+                    .map(role -> role.getName().name())
+                    .collect(Collectors.toSet()));
+        }
+        return dto;
+    }
+}
