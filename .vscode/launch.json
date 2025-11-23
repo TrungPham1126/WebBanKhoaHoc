@@ -8,7 +8,8 @@
       "mainClass": "com.soa.discovery_service.DiscoveryServiceApplication",
       "projectName": "discovery-service",
       "args": "",
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62375 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=discovery-service"
     },
     {
       "type": "java",
@@ -18,7 +19,8 @@
       "mainClass": "com.soa.api_gateway.ApiGatewayApplication",
       "projectName": "api-gateway",
       "args": "",
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62413 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=api-gateway"
     },
     {
       "type": "java",
@@ -28,7 +30,8 @@
       "mainClass": "com.soa.config_service.ConfigServiceApplication",
       "projectName": "config-service",
       "args": "",
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62401 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=config-service"
     },
     {
       "type": "java",
@@ -38,7 +41,8 @@
       "mainClass": "com.soa.user_service.UserServiceApplication",
       "projectName": "user-service",
       "args": "",
-      "envFile": "${workspaceFolder}/.env"
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62428 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=user-service"
     },
     {
       "type": "java",
@@ -47,6 +51,38 @@
       "cwd": "${workspaceFolder}",
       "mainClass": "com.soa.course_service.CourseServiceApplication",
       "projectName": "course-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62632 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=course-service"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-PaymentServiceApplication<payment-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.soa.payment_service.PaymentServiceApplication",
+      "projectName": "payment-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env",
+      "vmArgs": " -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=62579 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Dspring.jmx.enabled=true -Djava.rmi.server.hostname=localhost -Dspring.application.admin.enabled=true -Dspring.boot.project.name=payment-service"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-EnrollmentServiceApplication<enrollment-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.soa.enrollment_service.EnrollmentServiceApplication",
+      "projectName": "enrollment-service",
+      "args": "",
+      "envFile": "${workspaceFolder}/.env"
+    },
+    {
+      "type": "java",
+      "name": "Spring Boot-NotificationServiceApplication<notification-service>",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "mainClass": "com.soa.notification_service.NotificationServiceApplication",
+      "projectName": "notification-service",
       "args": "",
       "envFile": "${workspaceFolder}/.env"
     }

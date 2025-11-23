@@ -12,5 +12,5 @@ public class ExerciseResponseDTO {
     private ExerciseType type;
     private Boolean isFree;
     private Long videoId;
-    private Long courseId; // Để biết bài này của khóa nào (nếu có)
+    private Long courseId;
 }

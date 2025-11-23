@@ -16,17 +16,19 @@ public class Enrollment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Thay vì User object, ta lưu email người học
     @Column(name = "student_email", nullable = false)
     private String studentEmail;
 
-    // Thay vì Course object, ta lưu ID khóa học
     @Column(name = "course_id", nullable = false)
     private Long courseId;
 
-    // Có thể lưu thêm title để đỡ phải gọi sang Course Service lấy tên hiển thị
     @Column(name = "course_title")
     private String courseTitle;
+
+    // --- THÊM MỚI ---
+    @Column(name = "image_url")
+    private String imageUrl;
+    // ----------------
 
     @Column(nullable = false)
     private LocalDateTime enrolledAt;

@@ -36,7 +36,6 @@ public class JwtUtils {
                 .parseClaimsJws(token).getBody().getSubject();
     }
 
-    // --- HÀM MỚI: Lấy danh sách Role từ Token ---
     public List<String> getRolesFromJwtToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
                 .parseClaimsJws(token).getBody();

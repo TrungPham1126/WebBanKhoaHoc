@@ -14,7 +14,6 @@ import java.util.List;
 public class JwtUtils {
     private static final Logger logger = LoggerFactory.getLogger(JwtUtils.class);
 
-    // Lấy secret từ file config (đã có trong enrollment-service.properties)
     @Value("${jwt.secret}")
     private String jwtSecret;
 
@@ -22,7 +21,6 @@ public class JwtUtils {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
-    // 1. Validate Token
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);
@@ -33,7 +31,6 @@ public class JwtUtils {
         return false;
     }
 
-    // 2. Lấy Email từ Token
     public String getEmailFromJwtToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key()).build()
                 .parseClaimsJws(token).getBody().getSubject();
@@ -42,7 +39,7 @@ public class JwtUtils {
     public List<String> getRolesFromJwtToken(String token) {
         Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
                 .parseClaimsJws(token).getBody();
-        // Lấy claim "roles" đã được thêm vào từ user-service và cast sang List<String>
+
         return claims.get("roles", List.class);
     }
 }

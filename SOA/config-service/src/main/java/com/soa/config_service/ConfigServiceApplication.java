@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.config.server.EnableConfigServer;
 
 @SpringBootApplication
-@EnableConfigServer // <-- Bắt buộc: Kích hoạt chức năng Config Server
+@EnableConfigServer
 public class ConfigServiceApplication {
 
 	public static void main(String[] args) {

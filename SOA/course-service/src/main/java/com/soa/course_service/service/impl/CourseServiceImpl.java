@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +24,6 @@ public class CourseServiceImpl implements CourseService {
 
     private final CourseRepository courseRepository;
 
-    // --- Helper Methods ---
-
     private CourseResponseDTO mapToDTO(Course course) {
         CourseResponseDTO dto = new CourseResponseDTO();
         dto.setId(course.getId());
@@ -32,13 +31,13 @@ public class CourseServiceImpl implements CourseService {
         dto.setDescription(course.getDescription());
         dto.setPrice(course.getPrice());
         dto.setImageUrl(course.getImageUrl());
-
-        // Trong Microservice, Course chỉ lưu email giáo viên, không lưu object User
         dto.setTeacherName(course.getTeacherEmail());
+        dto.setStudentCount(100);
+        dto.setStatus(course.getStatus() != null ? course.getStatus().name() : "PENDING");
 
-        // Tạm thời để studentCount = 0 hoặc cần gọi sang Enrollment Service để lấy
-        // (nâng cao)
-        dto.setStudentCount(0);
+        // --- THÊM DÒNG NÀY ---
+        dto.setCreatedAt(course.getCreatedAt());
+        // ---------------------
 
         return dto;
     }
@@ -47,13 +46,15 @@ public class CourseServiceImpl implements CourseService {
         if (file == null || file.isEmpty()) {
             return null;
         }
+
         String fileName = UUID.randomUUID() + "_" + StringUtils.cleanPath(file.getOriginalFilename());
-        Path path = Paths.get("uploads/images");
-        if (!Files.exists(path)) {
-            Files.createDirectories(path);
+        Path uploadPath = Paths.get("uploads/images");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
         }
         try (InputStream inputStream = file.getInputStream()) {
-            Files.copy(inputStream, path.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(inputStream, filePath, StandardCopyOption.REPLACE_EXISTING);
         }
         return "/images/" + fileName;
     }
@@ -67,11 +68,10 @@ public class CourseServiceImpl implements CourseService {
         return course;
     }
 
-    // --- Implement Methods ---
-
+    @Transactional(readOnly = true)
     @Override
     public List<CourseResponseDTO> getAllCourses() {
-        return courseRepository.findAll().stream()
+        return courseRepository.findByStatus(CourseStatus.APPROVED).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -97,9 +97,10 @@ public class CourseServiceImpl implements CourseService {
         course.setTitle(request.getTitle());
         course.setDescription(request.getDescription());
         course.setPrice(request.getPrice());
-
-        // QUAN TRỌNG: Lưu email thay vì User entity
         course.setTeacherEmail(teacherEmail);
+
+        // Mặc định khi tạo mới là PENDING (Chờ duyệt)
+        course.setStatus(CourseStatus.PENDING);
 
         if (image != null && !image.isEmpty()) {
             course.setImageUrl(saveFile(image));
@@ -138,51 +139,82 @@ public class CourseServiceImpl implements CourseService {
         section.setTitle(request.getTitle());
         section.setCourse(course);
 
-        // Tự động set thứ tự
         int orderIndex = course.getSections() == null ? 0 : course.getSections().size();
         section.setOrderIndex(orderIndex);
 
         course.getSections().add(section);
-        courseRepository.save(course); // Cascade sẽ lưu section
+        courseRepository.save(course);
 
-        // Trả về DTO
-        // Lấy section vừa lưu (là phần tử cuối cùng)
         Section savedSection = course.getSections().get(course.getSections().size() - 1);
         return new SectionDTO(savedSection.getId(), savedSection.getTitle(), new ArrayList<>());
     }
 
+    @Transactional(readOnly = true)
     @Override
     public List<SectionDTO> getCourseContent(Long courseId) {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy khóa học"));
 
-        // Convert List<Section> -> List<SectionDTO>
         return course.getSections().stream().map(section -> {
             SectionDTO dto = new SectionDTO();
             dto.setId(section.getId());
             dto.setTitle(section.getTitle());
 
-            // Map Videos
             List<LessonDTO> lessons = new ArrayList<>();
             if (section.getVideos() != null) {
-                lessons.addAll(section.getVideos().stream().map(video -> new LessonDTO(
-                        video.getId(),
-                        video.getTitle(),
-                        "video",
-                        "10:00", // Placeholder duration
-                        video.getVideoUrl())).collect(Collectors.toList()));
+                lessons.addAll(section.getVideos().stream().map(video -> {
+                    LessonDTO lesson = new LessonDTO();
+                    lesson.setId(video.getId());
+                    lesson.setTitle(video.getTitle());
+                    lesson.setType("video");
+                    lesson.setDuration("10:00");
+                    lesson.setVideoUrl(video.getVideoUrl());
+                    lesson.setStatus(video.getStatus()); // <--- QUAN TRỌNG: Truyền status xuống
+                    return lesson;
+                }).collect(Collectors.toList()));
             }
-            // Map Exercises
+
             if (section.getExercises() != null) {
-                lessons.addAll(section.getExercises().stream().map(ex -> new LessonDTO(
-                        ex.getId(),
-                        ex.getTitle(),
-                        "exercise",
-                        null,
-                        null)).collect(Collectors.toList()));
+                lessons.addAll(section.getExercises().stream().map(ex -> {
+                    LessonDTO lesson = new LessonDTO();
+                    lesson.setId(ex.getId());
+                    lesson.setTitle(ex.getTitle());
+                    lesson.setType("exercise");
+                    return lesson;
+                }).collect(Collectors.toList()));
             }
             dto.setLessons(lessons);
             return dto;
         }).collect(Collectors.toList());
+    }
+    // --- Chức năng Admin ---
+
+    public void approveCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Khóa học không tồn tại"));
+        course.setStatus(CourseStatus.APPROVED);
+        courseRepository.save(course);
+    }
+
+    public void rejectCourse(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Khóa học không tồn tại"));
+        course.setStatus(CourseStatus.REJECTED);
+        courseRepository.save(course);
+    }
+
+    @Override
+    public List<CourseResponseDTO> getAllCoursesForAdmin() {
+
+        return courseRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteCourseByAdmin(Long id) {
+        Course course = courseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Khóa học không tồn tại"));
+        courseRepository.delete(course);
     }
 }

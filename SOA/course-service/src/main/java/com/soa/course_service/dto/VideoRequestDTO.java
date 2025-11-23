@@ -6,7 +6,6 @@ public class VideoRequestDTO {
     private String videoUrl;
     private Integer durationInSeconds;
 
-    // Getters và Setters
     public String getTitle() {
         return title;
     }

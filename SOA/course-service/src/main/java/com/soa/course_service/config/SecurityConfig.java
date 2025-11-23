@@ -22,12 +22,11 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Cho phép xem danh sách khóa học (GET) và các tài nguyên tĩnh
+
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").permitAll()
                         .requestMatchers("/images/**", "/videos/**").permitAll()
                         .requestMatchers("/hls/**", "/images/**").permitAll()
 
-                        // SỬA LỖI BẢO MẬT: Mọi request khác đều phải được xác thực
                         .anyRequest().authenticated()); //
 
         http.addFilterBefore(authTokenFilter, UsernamePasswordAuthenticationFilter.class);

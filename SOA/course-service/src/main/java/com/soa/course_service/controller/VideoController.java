@@ -14,14 +14,12 @@ import java.io.IOException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/videos") // Gateway sẽ map vào đây
+@RequestMapping("/api/v1/videos")
 @RequiredArgsConstructor
 public class VideoController {
 
     private final VideoService videoService;
 
-    // API Upload Video (Chỉ Teacher)
-    // POST /api/v1/videos/courses/{courseId}
     @PostMapping(value = "/courses/{courseId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<VideoResponseDTO> addVideo(
             @PathVariable Long courseId,
@@ -37,18 +35,15 @@ public class VideoController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    // API Xóa Video
     @DeleteMapping("/{videoId}")
     public ResponseEntity<Void> deleteVideo(@PathVariable Long videoId, Authentication authentication) {
         videoService.deleteVideo(videoId, authentication.getName());
         return ResponseEntity.noContent().build();
     }
 
-    // API Lấy danh sách Video
     @GetMapping("/courses/{courseId}")
     public ResponseEntity<List<VideoResponseDTO>> getVideos(@PathVariable Long courseId,
             Authentication authentication) {
-        // Logic check role ở service có thể phức tạp hơn
         return ResponseEntity.ok(videoService.getVideosForCourse(courseId, authentication.getName(), "UNKNOWN"));
     }
 }

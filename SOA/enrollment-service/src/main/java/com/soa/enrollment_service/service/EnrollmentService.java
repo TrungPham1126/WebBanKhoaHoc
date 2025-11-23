@@ -17,18 +17,16 @@ public class EnrollmentService {
     private final EnrollmentRepository enrollmentRepository;
 
     public EnrollmentResponseDTO enrollCourse(EnrollmentRequestDTO request, String studentEmail) {
-        // 1. Kiểm tra đã đăng ký chưa
+
         if (enrollmentRepository.existsByStudentEmailAndCourseId(studentEmail, request.getCourseId())) {
             throw new RuntimeException("Bạn đã đăng ký khóa học này rồi!");
         }
 
-        // 2. Lưu thông tin (Ở bước này tạm thời tin tưởng courseId gửi lên là đúng)
-        // (Nâng cao: Dùng FeignClient gọi sang Course-Service để check courseId có tồn
-        // tại ko)
         Enrollment enrollment = new Enrollment();
         enrollment.setStudentEmail(studentEmail);
         enrollment.setCourseId(request.getCourseId());
-        enrollment.setCourseTitle(request.getCourseTitle()); // Lưu tên khóa học để hiển thị cho nhanh
+        enrollment.setCourseTitle(request.getCourseTitle());
+        enrollment.setImageUrl(request.getImageUrl());
 
         Enrollment saved = enrollmentRepository.save(enrollment);
         return mapToDTO(saved);
@@ -46,6 +44,7 @@ public class EnrollmentService {
         dto.setStudentEmail(enrollment.getStudentEmail());
         dto.setCourseId(enrollment.getCourseId());
         dto.setCourseTitle(enrollment.getCourseTitle());
+        dto.setImageUrl(enrollment.getImageUrl()); // <--- MAP DỮ LIỆU Ở ĐÂY
         dto.setEnrolledAt(enrollment.getEnrolledAt());
         return dto;
     }

@@ -25,7 +25,6 @@ public class ExerciseServiceImpl implements ExerciseService {
     private final SubmissionRepository submissionRepository;
     private final CourseRepository courseRepository;
 
-    // --- Helper: Convert DTO ---
     private ExerciseResponseDTO mapToDTO(Exercise exercise) {
         ExerciseResponseDTO dto = new ExerciseResponseDTO();
         dto.setId(exercise.getId());
@@ -41,7 +40,6 @@ public class ExerciseServiceImpl implements ExerciseService {
         return dto;
     }
 
-    // --- Helper: Upload File ---
     private String uploadFile(MultipartFile file) throws IOException {
         if (file == null || file.isEmpty())
             return null;
@@ -52,10 +50,9 @@ public class ExerciseServiceImpl implements ExerciseService {
         try (InputStream inputStream = file.getInputStream()) {
             Files.copy(inputStream, path.resolve(fileName), StandardCopyOption.REPLACE_EXISTING);
         }
-        return "/exercises/" + fileName; // Đường dẫn trả về client
+        return "/exercises/" + fileName;
     }
 
-    // --- 1. TẠO BÀI TẬP (Giáo viên) ---
     @Override
     public ExerciseResponseDTO createExercise(ExerciseRequestDTO request, MultipartFile questionFile,
             String teacherEmail) throws IOException {
@@ -65,28 +62,24 @@ public class ExerciseServiceImpl implements ExerciseService {
         exercise.setType(request.getType());
         exercise.setIsFree(request.getIsFree());
 
-        // Xử lý file đề bài (Audio/Ảnh)
         if (questionFile != null) {
             exercise.setQuestionUrl(uploadFile(questionFile));
         }
 
-        // Nếu là bài tập gắn với Video (Khóa học)
         if (request.getVideoId() != null) {
             Video video = videoRepository.findById(request.getVideoId())
                     .orElseThrow(() -> new RuntimeException("Video không tồn tại"));
 
-            // Check quyền giáo viên
             if (!video.getCourse().getTeacherEmail().equals(teacherEmail)) {
                 throw new RuntimeException("Không có quyền thêm bài tập vào video này");
             }
             exercise.setVideo(video);
-            exercise.setIsFree(false); // Gắn video thì không free
+            exercise.setIsFree(false);
         }
 
         return mapToDTO(exerciseRepository.save(exercise));
     }
 
-    // --- 2. LẤY BÀI TẬP FREE (Public) ---
     @Override
     public List<ExerciseResponseDTO> getFreeExercises(ExerciseType type) {
         List<Exercise> exercises;
@@ -98,7 +91,6 @@ public class ExerciseServiceImpl implements ExerciseService {
         return exercises.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
-    // --- 3. LẤY BÀI TẬP THEO VIDEO (Học viên trong khóa) ---
     @Override
     public List<ExerciseResponseDTO> getExercisesByVideo(Long videoId) {
         return exerciseRepository.findByVideoId(videoId).stream()
@@ -106,7 +98,6 @@ public class ExerciseServiceImpl implements ExerciseService {
                 .collect(Collectors.toList());
     }
 
-    // --- 4. NỘP BÀI (Học viên) ---
     @Override
     public void submitExercise(Long exerciseId, String answerText, MultipartFile file, String studentEmail)
             throws IOException {
@@ -125,13 +116,11 @@ public class ExerciseServiceImpl implements ExerciseService {
         submissionRepository.save(submission);
     }
 
-    // --- 5. CHẤM ĐIỂM (Giáo viên) ---
     @Override
     public void gradeSubmission(Long submissionId, Double score, String feedback, String teacherEmail) {
         ExerciseSubmission submission = submissionRepository.findById(submissionId)
                 .orElseThrow(() -> new RuntimeException("Bài nộp không tồn tại"));
 
-        // Check quyền giáo viên (Nếu bài tập thuộc khóa học)
         Exercise ex = submission.getExercise();
         if (!ex.getIsFree() && ex.getVideo() != null) {
             String courseOwner = ex.getVideo().getCourse().getTeacherEmail();

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor // Tự tạo constructor cho jwtUtils
+@RequiredArgsConstructor
 public class AuthTokenFilter extends OncePerRequestFilter {
 
     private final JwtUtils jwtUtils;
@@ -33,24 +33,20 @@ public class AuthTokenFilter extends OncePerRequestFilter {
             String jwt = parseJwt(request);
 
             if (jwt != null && jwtUtils.validateJwtToken(jwt)) {
-                // 1. Lấy email từ Token
+
                 String email = jwtUtils.getEmailFromJwtToken(jwt);
 
-                // 2. Lấy danh sách Role từ Token (Ví dụ: ["ROLE_TEACHER"])
                 List<String> roles = jwtUtils.getRolesFromJwtToken(jwt);
 
-                // 3. Chuyển đổi sang định dạng Spring Security hiểu
                 List<SimpleGrantedAuthority> authorities = roles.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
 
-                // 4. Tạo đối tượng Authentication (Không cần password)
                 UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(email,
                         null, authorities);
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                // 5. Lưu vào Context để Spring biết user này là ai, có quyền gì
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
         } catch (Exception e) {

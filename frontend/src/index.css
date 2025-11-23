@@ -1,0 +1,47 @@
+/* 1. Các chỉ thị bắt buộc của Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 2. Xóa bỏ style mặc định của Vite gây căn giữa */
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Tùy chọn: giữ lại chế độ màu nếu muốn */
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #ffffff; /* Đặt nền trắng mặc định cho sạch */
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 3. Quan trọng nhất: Reset chiều cao để app chiếm 100% màn hình */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  display: block; /* Đổi từ flex sang block để layout tự nhiên */
+}
+
+/* (Tùy chọn) Style cho thanh cuộn đẹp hơn nếu muốn */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}

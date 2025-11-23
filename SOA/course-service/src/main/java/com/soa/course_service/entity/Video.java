@@ -19,6 +19,9 @@ public class Video {
     private Integer durationInSeconds;
     private Integer orderIndex;
 
+    @Column(name = "status")
+    private String status = "PROCESSING";
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "section_id")
     private Section section;

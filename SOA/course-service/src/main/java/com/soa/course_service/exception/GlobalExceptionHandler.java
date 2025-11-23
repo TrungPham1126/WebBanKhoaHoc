@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
 
         RestResponse<Object> res = new RestResponse<>();
         res.setStatusCode(HttpStatus.FORBIDDEN.value()); // 403
-        res.setError(ex.getMessage()); // Thông báo lỗi (VD: "Access Denied")
+        res.setError(ex.getMessage());
         res.setMessage("AccessDeniedException");
         res.setData(null);
 

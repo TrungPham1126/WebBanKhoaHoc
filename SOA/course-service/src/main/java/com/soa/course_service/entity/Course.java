@@ -3,6 +3,7 @@ package com.soa.course_service.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime; // Import thời gian
 import java.util.ArrayList;
 import java.util.List;
 
@@ -26,11 +27,20 @@ public class Course {
     private BigDecimal price;
     private String imageUrl;
 
-    // --- THAY ĐỔI QUAN TRỌNG: Lưu email giáo viên ---
     @Column(name = "teacher_email")
     private String teacherEmail;
 
-    // Cascade ALL để xóa Course thì xóa luôn Section, Video
     @OneToMany(mappedBy = "course", cascade = CascadeType.ALL)
     private List<Section> sections = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    private CourseStatus status = CourseStatus.PENDING;
+
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
 }

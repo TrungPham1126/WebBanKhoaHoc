@@ -9,5 +9,6 @@ public class EnrollmentResponseDTO {
     private String studentEmail;
     private Long courseId;
     private String courseTitle;
+    private String imageUrl;
     private LocalDateTime enrolledAt;
 }

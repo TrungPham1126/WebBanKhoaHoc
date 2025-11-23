@@ -9,18 +9,17 @@ import java.nio.file.Paths;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        // Lấy đường dẫn tuyệt đối tới thư mục uploads trong project
-        String uploadPath = Paths.get("uploads").toFile().getAbsolutePath();
+        @Override
+        public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-        // Cấu hình: Khi truy cập /hls/** -> tìm trong thư mục uploads/hls/
-        registry.addResourceHandler("/hls/**")
-                .addResourceLocations("file:" + uploadPath + "/hls/");
-        registry.addResourceHandler("/exercises/**")
-                .addResourceLocations("file:" + uploadPath + "/exercises/");
-        // Cấu hình cho ảnh
-        registry.addResourceHandler("/images/**")
-                .addResourceLocations("file:" + uploadPath + "/images/");
-    }
+                String uploadPath = Paths.get("uploads").toFile().getAbsolutePath();
+
+                registry.addResourceHandler("/hls/**")
+                                .addResourceLocations("file:" + uploadPath + "/hls/");
+                registry.addResourceHandler("/exercises/**")
+                                .addResourceLocations("file:" + uploadPath + "/exercises/");
+
+                registry.addResourceHandler("/images/**")
+                                .addResourceLocations("file:" + uploadPath + "/images/");
+        }
 }

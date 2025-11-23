@@ -5,5 +5,6 @@ import lombok.Data;
 @Data
 public class EnrollmentRequestDTO {
     private Long courseId;
-    private String courseTitle; // Gửi kèm tên khóa học để lưu luôn
+    private String courseTitle;
+    private String imageUrl; // Thêm trường này
 }

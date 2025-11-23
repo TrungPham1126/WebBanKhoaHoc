@@ -1,0 +1,58 @@
+package com.soa.user_service.config;
+
+import com.soa.user_service.entity.ERole;
+import com.soa.user_service.entity.Role;
+import com.soa.user_service.entity.User;
+import com.soa.user_service.repository.RoleRepository;
+import com.soa.user_service.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
+import java.util.HashSet;
+import java.util.Set;
+
+@Component
+@RequiredArgsConstructor
+public class DataSeeder implements CommandLineRunner {
+
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    @Override
+    public void run(String... args) throws Exception {
+        // 1. Tạo các Role trong Database nếu chưa có
+        if (roleRepository.count() == 0) {
+            roleRepository.save(new Role(ERole.ROLE_STUDENT));
+            roleRepository.save(new Role(ERole.ROLE_TEACHER));
+            roleRepository.save(new Role(ERole.ROLE_ADMIN));
+        }
+
+        // 2. Tạo tài khoản Admin nếu chưa tồn tại
+        if (!userRepository.existsByEmail("admin@gmail.com")) {
+            User admin = new User();
+            admin.setFullName("Super Admin");
+            admin.setEmail("admin@gmail.com");
+            admin.setPhoneNumber("0999999999");
+            // Mã hóa mật khẩu 123456 trước khi lưu
+            admin.setPassword(passwordEncoder.encode("123456"));
+
+            // Gán quyền ADMIN
+            Set<Role> roles = new HashSet<>();
+            Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
+                    .orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
+            roles.add(adminRole);
+
+            admin.setRoles(roles);
+
+            userRepository.save(admin);
+            System.out.println("---------------------------------------------");
+            System.out.println(">>> ĐÃ KHỞI TẠO TÀI KHOẢN ADMIN THÀNH CÔNG!");
+            System.out.println(">>> Email: admin@gmail.com");
+            System.out.println(">>> Pass : 123456");
+            System.out.println("---------------------------------------------");
+        }
+    }
+}

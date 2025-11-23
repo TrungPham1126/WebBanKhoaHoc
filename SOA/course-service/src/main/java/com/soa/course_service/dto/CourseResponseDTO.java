@@ -1,8 +1,8 @@
 package com.soa.course_service.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
-// DTO dùng để trả về thông tin khóa học
 public class CourseResponseDTO {
     private Long id;
     private String title;
@@ -11,6 +11,9 @@ public class CourseResponseDTO {
     private String teacherName;
     private Integer studentCount;
     private String imageUrl;
+    private String status;
+
+    private LocalDateTime createdAt;
 
     public Long getId() {
         return id;
@@ -68,4 +71,19 @@ public class CourseResponseDTO {
         this.imageUrl = imageUrl;
     }
 
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
 }

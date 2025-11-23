@@ -20,9 +20,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // Điểm kết nối WebSocket. React sẽ kết nối vào: http://localhost:8084/ws
         registry.addEndpoint("/ws")
-                .setAllowedOrigins("http://localhost:3000") // Cho phép React gọi
-                .withSockJS(); // Hỗ trợ fallback nếu trình duyệt không có WebSocket
+                .setAllowedOrigins("http://localhost:5173")
+                .withSockJS();
     }
 }
