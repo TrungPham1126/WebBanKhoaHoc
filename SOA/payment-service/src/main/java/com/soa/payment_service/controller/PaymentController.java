@@ -7,7 +7,7 @@ import com.soa.payment_service.repository.TransactionRepository;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,13 +28,17 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/payments")
-@RequiredArgsConstructor
+
 public class PaymentController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final VNPayConfig vnPayConfig;
     private final RestTemplate restTemplate;
+    public PaymentController(VNPayConfig vnPayConfig) {
+        this.vnPayConfig = vnPayConfig;
+        this.restTemplate = new RestTemplate();
+    }
 
     @Autowired
     private TransactionRepository transactionRepository;

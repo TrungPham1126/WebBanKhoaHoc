@@ -1,8 +1,8 @@
 package com.soa.user_service.dto;
 
-import lombok.Data;
 
-@Data
+
+
 public class UserUpdateRequestDTO {
 	private String fullName;
 	private String phoneNumber;

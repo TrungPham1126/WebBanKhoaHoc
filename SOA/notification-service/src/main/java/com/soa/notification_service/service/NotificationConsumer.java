@@ -1,19 +1,23 @@
 package com.soa.notification_service.service;
 
 import com.soa.notification_service.dto.NotificationMessage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+
+
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
+
+
 public class NotificationConsumer {
 
     private final SimpMessagingTemplate messagingTemplate;
-
+    private final EmailService emailService; // Inject EmailService
+    public NotificationConsumer(SimpMessagingTemplate messagingTemplate, EmailService emailService) {
+        this.messagingTemplate = messagingTemplate;
+        this.emailService = emailService;
+    }
     // Lắng nghe hàng đợi có tên "notification_queue"
     @RabbitListener(queues = "notification_queue")
     public void receiveMessage(NotificationMessage message) {
@@ -27,4 +31,20 @@ public class NotificationConsumer {
         // messagingTemplate.convertAndSendToUser(message.getRecipientEmail(),
         // "/queue/messages", message);
     }
+    @RabbitListener(queues = "notification_queue")
+    public void receiveMessage(NotificationMessage message) {
+        log.info("Nhận thông báo từ RabbitMQ: {}", message);
+
+        // Gửi email thật
+        try {
+            emailService.sendSimpleEmail(
+                message.getRecipientEmail(),
+                message.getTitle(),
+                message.getBody()
+            );
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email: {}", e.getMessage());
+        }
+    }
+
 }

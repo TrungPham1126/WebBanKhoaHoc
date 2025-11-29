@@ -11,4 +11,8 @@ public interface AuthService {
     UserResponseDTO registerTeacher(RegisterRequestDTO registerRequest);
 
     LoginResponseDTO loginUser(LoginRequestDTO loginRequest);
+
+    void forgotPassword(String email);
+
+    void resetPassword(String token, String newPassword);
 }

@@ -1,11 +1,12 @@
 package com.soa.user_service.dto;
 
-import lombok.Data;
+
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import com.soa.user_service.entity.User;
 
-@Data
+
 public class UserProfileResponseDTO {
 	private Long id;
 	private String fullName;

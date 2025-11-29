@@ -16,7 +16,7 @@ public class Role {
     private ERole name;
 
     // Constructors, Getters, Setters...
-
+    
     // Constructor tiện lợi
     public Role() {
     }

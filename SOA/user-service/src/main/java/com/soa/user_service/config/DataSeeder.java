@@ -1,25 +1,30 @@
 package com.soa.user_service.config;
 
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
+
 import com.soa.user_service.entity.ERole;
 import com.soa.user_service.entity.Role;
 import com.soa.user_service.entity.User;
 import com.soa.user_service.repository.RoleRepository;
 import com.soa.user_service.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
-
-import java.util.HashSet;
-import java.util.Set;
 
 @Component
-@RequiredArgsConstructor
+
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    public DataSeeder(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
+        this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public void run(String... args) throws Exception {

@@ -6,7 +6,7 @@ import com.soa.user_service.entity.User;
 import com.soa.user_service.exception.ResourceNotFoundException;
 import com.soa.user_service.repository.UserRepository;
 import com.soa.user_service.service.UserService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired; // Cần import cái này
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,10 +14,16 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+
+    // --- SỬA LỖI TẠI ĐÂY: Thêm Constructor thủ công ---
+    @Autowired
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+    // --------------------------------------------------
 
     @Override
     public List<UserResponseDTO> getAllUsers() {
@@ -76,7 +82,7 @@ public class UserServiceImpl implements UserService {
         dto.setFullName(user.getFullName());
         dto.setEmail(user.getEmail());
         dto.setPhoneNumber(user.getPhoneNumber());
-        // dto.setBio(user.getBio()); // Bạn cần thêm field bio vào UserResponseDTO nếu muốn trả về
+        dto.setBio(user.getBio()); 
         
         // Convert Roles Set<Entity> -> Set<String>
         if (user.getRoles() != null) {

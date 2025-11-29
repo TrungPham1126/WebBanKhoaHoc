@@ -3,18 +3,20 @@ package com.soa.enrollment_service.controller;
 import com.soa.enrollment_service.dto.EnrollmentRequestDTO;
 import com.soa.enrollment_service.dto.InternalEnrollRequest;
 import com.soa.enrollment_service.service.EnrollmentService;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/v1/enrollments/internal")
-@RequiredArgsConstructor
+
 public class InternalEnrollmentController {
 
     private final EnrollmentService enrollmentService;
+    public InternalEnrollmentController(EnrollmentService enrollmentService) {
+        this.enrollmentService = enrollmentService;
+    }
     private static final String INTERNAL_SECRET = "Ba0MatN0iBo_123456";
 
     @PostMapping("/enroll")
