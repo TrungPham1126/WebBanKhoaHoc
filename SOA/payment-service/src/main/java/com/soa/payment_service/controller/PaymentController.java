@@ -28,16 +28,16 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/v1/payments")
-
 public class PaymentController {
 
     private static final Logger logger = LoggerFactory.getLogger(PaymentController.class);
 
     private final VNPayConfig vnPayConfig;
     private final RestTemplate restTemplate;
-    public PaymentController(VNPayConfig vnPayConfig) {
+
+    public PaymentController(VNPayConfig vnPayConfig, RestTemplate restTemplate) {
         this.vnPayConfig = vnPayConfig;
-        this.restTemplate = new RestTemplate();
+        this.restTemplate = restTemplate;
     }
 
     @Autowired
@@ -151,16 +151,11 @@ public class PaymentController {
 
             // 2. Gọi Enrollment Service để kích hoạt khóa học
             try {
-                System.out.println(">>> [DEBUG] Bắt đầu gọi Enrollment Service cho user: " + studentEmail);
-                System.out.println(">>> [DEBUG] Course ID: " + courseId);
-
+                logger.info(">>> [DEBUG] Bắt đầu gọi Enrollment Service cho user: {}", studentEmail);
                 callEnrollmentService(courseId, courseTitle, studentEmail);
-
-                System.out.println(">>> [DEBUG] Gọi Enrollment Service THÀNH CÔNG!");
+                logger.info(">>> [DEBUG] Gọi Enrollment Service THÀNH CÔNG!");
             } catch (Exception e) {
-                System.err.println("!!! [ERROR] LỖI KHI GỌI ENROLLMENT SERVICE !!!");
-                System.err.println("Lỗi chi tiết: " + e.getMessage());
-                e.printStackTrace(); // In toàn bộ lỗi ra console để debug
+                logger.error("!!! [ERROR] LỖI KHI GỌI ENROLLMENT SERVICE !!!", e);
             }
 
             // 3. Redirect về trang thành công của Frontend
@@ -172,13 +167,14 @@ public class PaymentController {
     }
 
     private void callEnrollmentService(Long courseId, String courseTitle, String email) {
-        // URL gọi trực tiếp Enrollment Service (Cổng 8084)
-        String enrollmentUrl = "http://localhost:8084/api/v1/enrollments/internal/enroll";
+        // [FIX QUAN TRỌNG] Sử dụng tên Service trong Docker thay vì localhost
+        String enrollmentUrl = "http://soa-enrollment-service:8084/api/v1/enrollments/internal/enroll";
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("courseId", courseId);
         requestBody.put("courseTitle", courseTitle);
         requestBody.put("studentEmail", email);
+        requestBody.put("imageUrl", "default.png"); // Thêm trường này nếu bên Enrollment yêu cầu
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -195,9 +191,7 @@ public class PaymentController {
 
     @GetMapping("/history")
     public ResponseEntity<List<TransactionHistory>> getAllTransactions() {
-
         List<TransactionHistory> list = transactionRepository.findAll();
-
         list.sort((a, b) -> b.getId().compareTo(a.getId()));
         return ResponseEntity.ok(list);
     }

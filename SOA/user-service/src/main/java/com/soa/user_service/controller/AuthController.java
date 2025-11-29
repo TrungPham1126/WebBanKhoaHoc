@@ -34,6 +34,7 @@ public class AuthController {
         LoginResponseDTO loginResponse = authService.loginUser(loginRequest);
         return new ResponseEntity<>(loginResponse, HttpStatus.OK);
     }
+
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@RequestParam String email) {
         authService.forgotPassword(email);
@@ -45,3 +46,5 @@ public class AuthController {
         authService.resetPassword(token, newPassword);
         return ResponseEntity.ok("Đặt lại mật khẩu thành công!");
     }
+
+}

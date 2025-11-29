@@ -14,12 +14,12 @@ import com.soa.user_service.repository.RoleRepository;
 import com.soa.user_service.repository.UserRepository;
 
 @Component
-
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+
     public DataSeeder(UserRepository userRepository, RoleRepository roleRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -28,12 +28,10 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // 1. Tạo các Role trong Database nếu chưa có
-        if (roleRepository.count() == 0) {
-            roleRepository.save(new Role(ERole.ROLE_STUDENT));
-            roleRepository.save(new Role(ERole.ROLE_TEACHER));
-            roleRepository.save(new Role(ERole.ROLE_ADMIN));
-        }
+        // [FIX] Kiểm tra từng Role, thiếu cái nào tạo cái đó
+        createRoleIfNotFound(ERole.ROLE_STUDENT);
+        createRoleIfNotFound(ERole.ROLE_TEACHER);
+        createRoleIfNotFound(ERole.ROLE_ADMIN);
 
         // 2. Tạo tài khoản Admin nếu chưa tồn tại
         if (!userRepository.existsByEmail("admin@gmail.com")) {
@@ -41,10 +39,8 @@ public class DataSeeder implements CommandLineRunner {
             admin.setFullName("Super Admin");
             admin.setEmail("admin@gmail.com");
             admin.setPhoneNumber("0999999999");
-            // Mã hóa mật khẩu 123456 trước khi lưu
             admin.setPassword(passwordEncoder.encode("123456"));
 
-            // Gán quyền ADMIN
             Set<Role> roles = new HashSet<>();
             Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
                     .orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
@@ -55,9 +51,15 @@ public class DataSeeder implements CommandLineRunner {
             userRepository.save(admin);
             System.out.println("---------------------------------------------");
             System.out.println(">>> ĐÃ KHỞI TẠO TÀI KHOẢN ADMIN THÀNH CÔNG!");
-            System.out.println(">>> Email: admin@gmail.com");
-            System.out.println(">>> Pass : 123456");
             System.out.println("---------------------------------------------");
+        }
+    }
+
+    // Hàm phụ trợ giúp code gọn hơn
+    private void createRoleIfNotFound(ERole name) {
+        if (roleRepository.findByName(name).isEmpty()) {
+            roleRepository.save(new Role(name));
+            System.out.println(">>> Đã tạo Role mới: " + name);
         }
     }
 }

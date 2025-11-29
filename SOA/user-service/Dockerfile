@@ -24,5 +24,5 @@ USER spring:spring
 # Copy fat JAR chính xác
 COPY --from=build /app/target/*-SNAPSHOT.jar app.jar
 
-# Entry point
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# [FIX/QUAN TRỌNG] Thêm lệnh sleep 30s để chờ MySQL hoàn tất khởi tạo.
+ENTRYPOINT ["sh", "-c", "sleep 30 && java -jar app.jar"]

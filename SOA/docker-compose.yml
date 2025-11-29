@@ -76,19 +76,26 @@ services:
     ports:
       - "8081:8081"
     environment:
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_service_db
+      # Tắt config server để tránh lỗi connection refused lúc khởi động
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+      EUREKA_CLIENT_ENABLED: "false"
+
+      # Cấu hình DB cứng
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/user_service_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+
+      # Cấu hình RabbitMQ
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       - mysql
-      - discovery-service
-      - config-service
+      - rabbitmq
     networks:
       - soa-network
     restart: always
-
   course-service:
     image: soa-course-service:latest
     container_name: soa-course-service
@@ -97,10 +104,13 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8082:8082"
+    # [FIX] Thêm volume để lưu trữ ảnh/video bền vững
+    volumes:
+      - ./uploads_data:/app/uploads
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/course_service_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/course_service_db?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
       spring.cloud.config.retry.initial-interval: 3000
@@ -124,9 +134,14 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       - discovery-service
       - config-service
+      - rabbitmq
     networks:
       - soa-network
     restart: always
@@ -142,13 +157,18 @@ services:
     environment:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/enrollment_service_db
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/enrollment_service_db?createDatabaseIfNotExist=true
       SPRING_DATASOURCE_USERNAME: root
       SPRING_DATASOURCE_PASSWORD: root
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       - mysql
       - discovery-service
       - config-service
+      - rabbitmq
     networks:
       - soa-network
     restart: always
@@ -165,6 +185,9 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-service:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-service:8761/eureka/
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     depends_on:
       - discovery-service
       - config-service
