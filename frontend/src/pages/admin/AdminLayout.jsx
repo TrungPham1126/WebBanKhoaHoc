@@ -3,7 +3,6 @@ import { Link, Outlet, useLocation } from "react-router-dom";
 const AdminLayout = () => {
   const location = useLocation();
 
-  // Bộ icon SVG chuẩn đẹp (Heroicons)
   const icons = {
     dashboard: (
       <svg
@@ -17,11 +16,11 @@ const AdminLayout = () => {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z"
+          d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25a2.25 2.25 0 0 1-2.25 2.25h-2.25A2.25 2.25 0 0 1 13.5 8.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z"
         />
       </svg>
     ),
-    approve: (
+    courses: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -33,7 +32,12 @@ const AdminLayout = () => {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          d="M12 6.75a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12 10.5a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12 14.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5ZM12 18a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M19.5 7.5a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v9a3 3 0 0 0 3 3h9a3 3 0 0 0 3-3v-9Z"
         />
       </svg>
     ),
@@ -49,11 +53,11 @@ const AdminLayout = () => {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+          d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"
         />
       </svg>
     ),
-    money: (
+    revenue: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
         fill="none"
@@ -65,87 +69,82 @@ const AdminLayout = () => {
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+          d="M2.25 18.75V3.75a4.5 4.5 0 0 1 4.5-4.5h11.25a4.5 4.5 0 0 1 4.5 4.5v15a4.5 4.5 0 0 1-4.5 4.5H6.75a4.5 4.5 0 0 1-4.5-4.5Z"
+        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 10.5h7.5" />
+      </svg>
+    ),
+    // [MỚI] Icon Giao diện
+    interface: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={1.5}
+        stroke="currentColor"
+        className="w-6 h-6"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9.53 16.122a3 3 0 0 0-5.78 1.128 2.25 2.25 0 0 1-2.4 2.245 4.5 4.5 0 0 0 8.4-2.245c0-.399-.077-.78-.22-1.128Zm0 0a15.998 15.998 0 0 0 3.388-1.62m-5.043-.025a15.994 15.994 0 0 1 1.622-3.395m3.42 3.42a15.995 15.995 0 0 0 4.764-4.648l3.876-5.814a1.151 1.151 0 0 0-1.597-1.597L14.146 6.32a15.996 15.996 0 0 0-4.649 4.763m3.42 3.42a6.776 6.776 0 0 0-3.42-3.42"
         />
       </svg>
     ),
   };
 
   const menuItems = [
-    { path: "/admin/dashboard", label: "Tổng quan", icon: icons.dashboard },
-    { path: "/admin/courses", label: "Duyệt khóa học", icon: icons.approve },
-    { path: "/admin/users", label: "Người dùng", icon: icons.users },
-    { path: "/admin/revenue", label: "Doanh thu", icon: icons.money },
+    { label: "Dashboard", icon: icons.dashboard, path: "/admin/dashboard" },
+    { label: "Quản lý Khóa học", icon: icons.courses, path: "/admin/courses" },
+    { label: "Quản lý Người dùng", icon: icons.users, path: "/admin/users" },
+    { label: "Quản lý Doanh thu", icon: icons.revenue, path: "/admin/revenue" },
+    {
+      label: "Cài đặt Giao diện",
+      icon: icons.interface,
+      path: "/admin/interface",
+    }, // [MỚI]
   ];
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans">
+    <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 fixed h-full z-20 shadow-sm">
-        <div className="h-[72px] flex items-center justify-center border-b border-gray-100">
-          <Link
-            to="/"
-            className="text-2xl font-bold text-purple-600 tracking-tight"
-          >
-            Admin Portal
-          </Link>
+      <div className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full shadow-lg z-20">
+        <div className="p-6 text-2xl font-bold text-purple-600 border-b border-gray-100 flex items-center gap-2">
+          Admin Portal
         </div>
 
-        <nav className="p-4 space-y-2">
+        <nav className="flex-grow p-4 space-y-2">
           {menuItems.map((item) => (
             <Link
               key={item.path}
               to={item.path}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
-                location.pathname === item.path
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-200"
-                  : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
-              }`}
-            >
-              <span
-                className={`${
+              className={`group flex items-center gap-3 p-3 rounded-lg transition font-medium text-sm
+                ${
                   location.pathname === item.path
-                    ? "text-white"
-                    : "text-gray-400 group-hover:text-purple-600"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-200"
+                    : "text-gray-600 hover:bg-purple-50 hover:text-purple-700"
                 }`}
-              >
-                {item.icon}
-              </span>
-              <span className="font-medium text-sm">{item.label}</span>
+            >
+              <span className="w-5 h-5">{item.icon}</span>
+              <span>{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        <div className="absolute bottom-0 w-full p-4 border-t border-gray-100">
+        <div className="absolute bottom-0 w-full p-4 border-t border-gray-100 bg-gray-50">
           <Link
             to="/"
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition text-sm justify-center"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 transition text-sm justify-center font-medium"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3"
-              />
-            </svg>
-            Về trang chủ
+            ← Về trang chủ
           </Link>
         </div>
-      </aside>
+      </div>
 
-      {/* Main Content */}
-      <main className="flex-1 ml-64 p-8">
-        <div className="max-w-7xl mx-auto">
-          <Outlet />
-        </div>
-      </main>
+      {/* MAIN CONTENT */}
+      <div className="flex-1 ml-64 p-8 overflow-y-auto">
+        <Outlet />
+      </div>
     </div>
   );
 };

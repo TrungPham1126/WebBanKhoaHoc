@@ -1,5 +1,6 @@
 package com.soa.user_service.controller;
 
+import com.soa.user_service.dto.ChartDataDTO;
 import com.soa.user_service.dto.UserResponseDTO;
 import com.soa.user_service.dto.UserUpdateRequestDTO;
 import com.soa.user_service.service.UserService;
@@ -25,7 +26,8 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    // 2. Lấy thông tin User theo ID (Admin hoặc chính chủ - logic này có thể xử lý thêm ở Gateway hoặc Service)
+    // 2. Lấy thông tin User theo ID (Admin hoặc chính chủ - logic này có thể xử lý
+    // thêm ở Gateway hoặc Service)
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
@@ -54,5 +56,11 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/stats")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<List<ChartDataDTO>> getUserStats() {
+        return ResponseEntity.ok(userService.getNewUsersStats());
     }
 }

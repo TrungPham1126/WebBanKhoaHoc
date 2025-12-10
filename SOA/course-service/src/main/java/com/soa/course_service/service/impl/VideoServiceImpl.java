@@ -31,10 +31,12 @@ public class VideoServiceImpl implements VideoService {
     private final CourseRepository courseRepository;
     private final HlsService hlsService;
 
+    // SỬA: Đổi tham số duration từ Long thành Integer để khớp với Controller và
+    // Entity
     @Override
-    @Transactional // Giữ kết nối DB
+    @Transactional
     public VideoResponseDTO addVideoToCourse(Long courseId, Long sectionId, String title, MultipartFile file,
-            Integer duration, String teacherEmail) throws IOException {
+            Integer duration, String teacherEmail) throws IOException { // [Fix] Changed Long to Integer
 
         Course course = checkTeacherOwnership(courseId, teacherEmail);
 
@@ -67,6 +69,8 @@ public class VideoServiceImpl implements VideoService {
         video.setCourse(course);
         video.setSection(targetSection);
         video.setTitle(title);
+        // SỬA: duration đã là Integer, không cần gọi .intValue() nữa (hoặc check null
+        // an toàn)
         video.setDurationInSeconds(duration != null ? duration : 0);
         video.setVideoUrl("/uploads/temp/" + tempMp4Path.getFileName().toString());
         video.setStatus("PROCESSING");
@@ -83,6 +87,9 @@ public class VideoServiceImpl implements VideoService {
         return convertToResponseDTO(savedVideo);
     }
 
+    // ... Giữ nguyên các hàm khác (deleteVideo, getVideosForCourse,
+    // checkTeacherOwnership, v.v.) ...
+
     @Override
     public void deleteVideo(Long videoId, String teacherEmail) {
         Video video = videoRepository.findById(videoId)
@@ -98,6 +105,76 @@ public class VideoServiceImpl implements VideoService {
         return videoRepository.findByCourse(course).stream()
                 .map(this::convertToResponseDTO)
                 .collect(Collectors.toList());
+    }
+
+    // Thêm hàm này nếu interface yêu cầu, nhưng nên bỏ đi nếu không dùng
+    @Override
+    public VideoResponseDTO addVideoToCourse(Long courseId, Long sectionId, String title, MultipartFile file,
+            Long duration, String teacherEmail) throws IOException {
+        // Chuyển tiếp sang hàm Integer nếu interface cũ vẫn gọi Long
+        return addVideoToCourse(courseId, sectionId, title, file, duration != null ? duration.intValue() : 0,
+                teacherEmail);
+    }
+
+    public List<VideoResponseDTO> getVideosByCourseId(Long courseId) {
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new RuntimeException("Khóa học không tồn tại"));
+        return videoRepository.findByCourse(course).stream()
+                .map(this::convertToResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public VideoResponseDTO getVideoById(Long videoId) {
+        Video video = videoRepository.findById(videoId)
+                .orElseThrow(() -> new RuntimeException("Video không tồn tại"));
+        return convertToResponseDTO(video);
+    }
+
+    @Override
+    public VideoResponseDTO uploadVideo(MultipartFile file, Long courseId, String teacherEmail) throws IOException {
+        // ... (Giữ nguyên logic hàm uploadVideo cũ của bạn) ...
+        Course course = checkTeacherOwnership(courseId, teacherEmail);
+
+        if (file.isEmpty())
+            throw new RuntimeException("File rỗng!");
+
+        try {
+            Path tempMp4Path = saveTempFile(file);
+            String fileNameWithoutExt = tempMp4Path.getFileName().toString().replace(".mp4", "");
+
+            Section targetSection;
+            if (course.getSections().isEmpty()) {
+                targetSection = new Section();
+                targetSection.setTitle("Chương 1");
+                targetSection.setCourse(course);
+                targetSection.setOrderIndex(1);
+                course.getSections().add(targetSection);
+            } else {
+                targetSection = course.getSections().get(0);
+            }
+
+            Video video = new Video();
+            video.setCourse(course);
+            video.setSection(targetSection);
+            video.setTitle(file.getOriginalFilename());
+            video.setDurationInSeconds(0);
+            video.setVideoUrl("/uploads/temp/" + tempMp4Path.getFileName().toString());
+            video.setStatus("PROCESSING");
+
+            courseRepository.save(course);
+            Video savedVideo = videoRepository.save(video);
+
+            try {
+                hlsService.processVideoAsync(savedVideo.getId(), tempMp4Path, fileNameWithoutExt);
+            } catch (Exception e) {
+                System.err.println("Lỗi gọi async: " + e.getMessage());
+            }
+
+            return convertToResponseDTO(savedVideo);
+        } catch (IOException e) {
+            throw new RuntimeException("Lỗi lưu file: " + e.getMessage(), e);
+        }
     }
 
     private Course checkTeacherOwnership(Long courseId, String teacherEmail) {

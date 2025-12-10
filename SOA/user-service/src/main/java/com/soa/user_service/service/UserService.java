@@ -1,5 +1,6 @@
 package com.soa.user_service.service;
 
+import com.soa.user_service.dto.ChartDataDTO;
 import com.soa.user_service.dto.UserResponseDTO;
 import com.soa.user_service.dto.UserUpdateRequestDTO;
 import java.util.List;
@@ -19,4 +20,6 @@ public interface UserService {
 
     // Xóa user (Dành cho Admin)
     void deleteUser(Long id);
+
+    List<ChartDataDTO> getNewUsersStats();
 }

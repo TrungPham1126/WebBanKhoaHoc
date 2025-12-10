@@ -17,7 +17,7 @@ public class Course {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
+    private Integer studentCount = 0;
     private String title;
 
     @Lob
@@ -35,7 +35,7 @@ public class Course {
 
     @Enumerated(EnumType.STRING)
     private CourseStatus status = CourseStatus.PENDING;
-
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist

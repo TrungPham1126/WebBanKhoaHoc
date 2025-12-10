@@ -12,7 +12,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/courses")
@@ -20,6 +23,7 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService courseService;
+    private final com.soa.course_service.repository.CourseRepository courseRepository;
 
     @GetMapping
     public ResponseEntity<List<CourseResponseDTO>> getAll() {
@@ -110,5 +114,25 @@ public class CourseController {
     public ResponseEntity<Void> deleteByAdmin(@PathVariable Long id) {
         courseService.deleteCourseByAdmin(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/admin/stats")
+    public ResponseEntity<Map<String, Object>> getAdminStats() {
+        Map<String, Object> response = new HashMap<>();
+
+        // 1. Biểu đồ Trend
+        List<CourseChartDTO> trend = courseRepository.getNewCoursesTrend().stream()
+                .map(obj -> new CourseChartDTO((String) obj[0], ((Number) obj[1]).longValue()))
+                .collect(Collectors.toList());
+
+        // 2. Top Courses
+        List<CourseChartDTO> topCourses = courseRepository.findTop5ByOrderByStudentCountDesc().stream()
+                .map(c -> new CourseChartDTO(c.getTitle(), c.getStudentCount().longValue()))
+                .collect(Collectors.toList());
+
+        response.put("trend", trend);
+        response.put("topCourses", topCourses);
+
+        return ResponseEntity.ok(response);
     }
 }

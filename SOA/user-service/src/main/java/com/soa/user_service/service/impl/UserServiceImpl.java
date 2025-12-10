@@ -1,5 +1,6 @@
 package com.soa.user_service.service.impl;
 
+import com.soa.user_service.dto.ChartDataDTO;
 import com.soa.user_service.dto.UserResponseDTO;
 import com.soa.user_service.dto.UserUpdateRequestDTO;
 import com.soa.user_service.entity.User;
@@ -82,8 +83,8 @@ public class UserServiceImpl implements UserService {
         dto.setFullName(user.getFullName());
         dto.setEmail(user.getEmail());
         dto.setPhoneNumber(user.getPhoneNumber());
-        dto.setBio(user.getBio()); 
-        
+        dto.setBio(user.getBio());
+
         // Convert Roles Set<Entity> -> Set<String>
         if (user.getRoles() != null) {
             dto.setRoles(user.getRoles().stream()
@@ -91,5 +92,17 @@ public class UserServiceImpl implements UserService {
                     .collect(Collectors.toSet()));
         }
         return dto;
+    }
+
+    @Override
+    public List<ChartDataDTO> getNewUsersStats() {
+        List<Object[]> results = userRepository.getNewUsersPerMonth();
+
+        return results.stream()
+                .map(row -> new ChartDataDTO(
+                        (String) row[0],
+                        // [FIX] Ép kiểu an toàn qua Number để tránh lỗi ClassCastException
+                        ((Number) row[1]).longValue()))
+                .collect(Collectors.toList());
     }
 }

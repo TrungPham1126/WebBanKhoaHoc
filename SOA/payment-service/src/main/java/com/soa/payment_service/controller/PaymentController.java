@@ -1,7 +1,9 @@
 package com.soa.payment_service.controller;
 
 import com.soa.payment_service.config.VNPayConfig;
+import com.soa.payment_service.dto.ChartDataDTO;
 import com.soa.payment_service.dto.PaymentDTO;
+import com.soa.payment_service.dto.RestResponse;
 import com.soa.payment_service.entity.TransactionHistory;
 import com.soa.payment_service.repository.TransactionRepository;
 
@@ -16,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -25,6 +28,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/payments")
@@ -35,14 +39,15 @@ public class PaymentController {
     private final VNPayConfig vnPayConfig;
     private final RestTemplate restTemplate;
 
+    @Autowired
+    private TransactionRepository transactionRepository;
+
     public PaymentController(VNPayConfig vnPayConfig, RestTemplate restTemplate) {
         this.vnPayConfig = vnPayConfig;
         this.restTemplate = restTemplate;
     }
 
-    @Autowired
-    private TransactionRepository transactionRepository;
-
+    // --- API TẠO THANH TOÁN VNPAY ---
     @GetMapping("/create_payment")
     public ResponseEntity<PaymentDTO> createPayment(
             HttpServletRequest req,
@@ -120,6 +125,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentDTO);
     }
 
+    // --- XỬ LÝ KẾT QUẢ TRẢ VỀ TỪ VNPAY ---
     @GetMapping("/vnpay-return")
     public void vnpayReturn(
             @RequestParam(value = "vnp_ResponseCode") String responseCode,
@@ -151,48 +157,80 @@ public class PaymentController {
 
             // 2. Gọi Enrollment Service để kích hoạt khóa học
             try {
-                logger.info(">>> [DEBUG] Bắt đầu gọi Enrollment Service cho user: {}", studentEmail);
+                logger.info(">>> [DEBUG] Kích hoạt khóa học cho: {}", studentEmail);
                 callEnrollmentService(courseId, courseTitle, studentEmail);
-                logger.info(">>> [DEBUG] Gọi Enrollment Service THÀNH CÔNG!");
+                // 3. Redirect về Frontend (Thành công)
+                response.sendRedirect("http://localhost:5173/payment-success?courseId=" + courseId);
             } catch (Exception e) {
-                logger.error("!!! [ERROR] LỖI KHI GỌI ENROLLMENT SERVICE !!!", e);
+                logger.error("!!! [ERROR] Lỗi gọi Enrollment Service: ", e);
+                if (e instanceof HttpClientErrorException) {
+                    String responseBody = ((HttpClientErrorException) e).getResponseBodyAsString();
+                    logger.error(">>> [ERROR BODY] Chi tiết lỗi từ Enrollment: {}", responseBody);
+                }
+                // Nếu lỗi kích hoạt khóa học nhưng tiền đã trừ -> Vẫn báo lỗi để Admin check
+                response.sendRedirect("http://localhost:5173/payment-failed?error=enrollment_failed");
             }
-
-            // 3. Redirect về trang thành công của Frontend
-            response.sendRedirect("http://localhost:5173/payment-success?courseId=" + courseId);
         } else {
-            // Redirect về trang thất bại
+            // Lỗi từ VNPay
             response.sendRedirect("http://localhost:5173/payment-failed");
         }
     }
 
     private void callEnrollmentService(Long courseId, String courseTitle, String email) {
-        // [FIX QUAN TRỌNG] Sử dụng tên Service trong Docker thay vì localhost
-        String enrollmentUrl = "http://soa-enrollment-service:8084/api/v1/enrollments/internal/enroll";
+        // [FIX] Dùng localhost thay vì soa-enrollment-service khi chạy Local
+        String enrollmentUrl = "http://localhost:8084/api/v1/enrollments/internal/enroll";
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("courseId", courseId);
         requestBody.put("courseTitle", courseTitle);
         requestBody.put("studentEmail", email);
-        requestBody.put("imageUrl", "default.png"); // Thêm trường này nếu bên Enrollment yêu cầu
+        requestBody.put("imageUrl", "default.png");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-
-        // --- GỬI MẬT KHẨU NỘI BỘ ---
         headers.set("X-Internal-Secret", "Ba0MatN0iBo_123456");
-        // ---------------------------
 
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-
-        // Gửi request
         restTemplate.postForObject(enrollmentUrl, entity, String.class);
     }
+
+    // --- CÁC API THỐNG KÊ (DASHBOARD LEVEL 4) ---
 
     @GetMapping("/history")
     public ResponseEntity<List<TransactionHistory>> getAllTransactions() {
         List<TransactionHistory> list = transactionRepository.findAll();
+        // Sort giảm dần theo ID để thấy cái mới nhất
         list.sort((a, b) -> b.getId().compareTo(a.getId()));
         return ResponseEntity.ok(list);
+    }
+
+    @GetMapping("/stats/monthly-revenue")
+    public ResponseEntity<RestResponse<List<ChartDataDTO>>> getMonthlyRevenue() {
+        List<ChartDataDTO> stats = transactionRepository.getMonthlyRevenue();
+        return ResponseEntity.ok(RestResponse.success(stats, "Lấy doanh thu tháng thành công"));
+    }
+
+    @GetMapping("/stats/dashboard")
+    public ResponseEntity<RestResponse<Map<String, Object>>> getDashboardStats() {
+        Map<String, Object> data = new HashMap<>();
+
+        // 1. Lấy dữ liệu thô từ DB
+        List<ChartDataDTO> dailyRevenue = transactionRepository.getDailyRevenue();
+        List<ChartDataDTO> topCourses = transactionRepository.getTopSellingCourses()
+                .stream().limit(5).collect(Collectors.toList());
+        List<TransactionHistory> recentTransactions = transactionRepository.findTop5ByOrderByCreatedAtDesc();
+
+        // 2. Tính tổng doanh thu
+        BigDecimal totalRevenue = dailyRevenue.stream()
+                .map(ChartDataDTO::getValue)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // 3. Đóng gói response
+        data.put("revenueChart", dailyRevenue);
+        data.put("topCourses", topCourses);
+        data.put("recentTransactions", recentTransactions);
+        data.put("totalRevenue", totalRevenue);
+
+        return ResponseEntity.ok(RestResponse.success(data, "Lấy Dashboard thành công"));
     }
 }
