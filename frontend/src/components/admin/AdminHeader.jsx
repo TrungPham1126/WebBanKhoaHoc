@@ -5,25 +5,27 @@ const AdminHeader = ({ title, subtitle }) => {
   const { user } = useContext(AuthContext);
 
   return (
-    <div className="flex justify-between items-center mb-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      {/* Bên trái: Tiêu đề trang */}
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+      {/* Title Section */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">{title}</h1>
-        <p className="text-sm text-gray-500 mt-1">{subtitle}</p>
+        <h1 className="text-2xl font-bold text-slate-800 tracking-tight">
+          {title}
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">{subtitle}</p>
       </div>
 
-      {/* Bên phải: Thông tin Admin & Nút hành động nhanh */}
-      <div className="flex items-center gap-4">
+      {/* User Section - Glass style card */}
+      <div className="flex items-center gap-4 bg-white p-2 pl-4 pr-2 rounded-full shadow-sm border border-slate-200">
         <div className="text-right hidden md:block">
-          <div className="text-sm font-bold text-gray-900">
-            {user?.fullName || "Administrator"}
+          <div className="text-sm font-bold text-slate-800 leading-none">
+            {user?.fullName || "Admin User"}
           </div>
-          <div className="text-xs text-purple-600 font-medium bg-purple-50 px-2 py-0.5 rounded-full inline-block">
-            System Admin
+          <div className="text-[10px] text-slate-400 font-semibold uppercase mt-1">
+            Quản trị viên
           </div>
         </div>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-600 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-          {user?.fullName ? user.fullName.charAt(0) : "A"}
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white">
+          {user?.fullName ? user.fullName.charAt(0).toUpperCase() : "A"}
         </div>
       </div>
     </div>

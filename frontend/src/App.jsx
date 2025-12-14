@@ -1,25 +1,38 @@
-import { BrowserRouter, Routes, Route, Outlet } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Outlet,
+  Navigate,
+} from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import CourseDetail from "./pages/CourseDetail";
 import LoginPage from "./pages/LoginPage";
 import PaymentSuccess from "./pages/PaymentSuccess";
+
+// 🔥 IMPORT MỚI: Trang Lỗi Thanh Toán
+import PaymentFailed from "./pages/PaymentFailed";
+
 import TeacherDashboard from "./pages/teacher/TeacherDashboard";
 import MyCourses from "./pages/student/MyCourses";
 import EditCoursePage from "./pages/teacher/EditCoursePage";
 import SignupPage from "./pages/SignupPage";
 import CourseLearningPage from "./pages/student/CourseLearningPage";
-// Import các trang Admin
-import AdminInterface from "./pages/admin/AdminInterface"; // Import component giao diện Admin
+import BecomeTeacherPage from "./pages/BecomeTeacherPage";
+// Teacher Pages
+import TeacherWallet from "./pages/teacher/TeacherWallet";
 
-import AdminDashboard from "./pages/admin/AdminDashboard";
+// Admin Pages
 import AdminLayout from "./pages/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminCourses from "./pages/admin/AdminCourses";
 import AdminRevenue from "./pages/admin/AdminRevenue";
 import AdminUsers from "./pages/admin/AdminUsers";
+import BannerManager from "./pages/admin/BannerManager";
 
-// 🟢 TẠO MAIN LAYOUT: Chứa Navbar và Footer chung
+// Layout chính
 const MainLayout = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white">
@@ -27,27 +40,9 @@ const MainLayout = () => {
       <main className="flex-grow w-full">
         <Outlet />
       </main>
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-auto">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-8 text-sm">
-          <div>
-            <h3 className="font-bold text-lg mb-4">CourseMaster</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>Về chúng tôi</li>
-              <li>Liên hệ</li>
-              <li>Cơ hội nghề nghiệp</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold text-lg mb-4">Hỗ trợ</h3>
-            <ul className="space-y-2 text-gray-400">
-              <li>Cài đặt ứng dụng</li>
-              <li>Trợ giúp</li>
-            </ul>
-          </div>
-          <div>
-            <p className="text-gray-400">&copy; 2025 CourseMaster, Inc.</p>
-          </div>
+        <div className="max-w-7xl mx-auto px-6 text-center text-sm text-gray-400">
+          &copy; 2025 CourseMaster, Inc. All rights reserved.
         </div>
       </footer>
     </div>
@@ -59,35 +54,41 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* 🟢 NHÓM 1: PUBLIC / STUDENT / TEACHER (Dùng MainLayout) */}
+          {/* 🟢 NHÓM 1: PUBLIC / STUDENT / TEACHER (Dùng Layout Chung) */}
           <Route element={<MainLayout />}>
-            {/* PUBLIC ROUTES */}
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/course/:id" element={<CourseDetail />} />
+            {/* ROUTE THANH TOÁN */}
             <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/admin/interface" element={<AdminInterface />} />
-            {/* STUDENT/TEACHER ROUTES */}
+            <Route path="/payment-failed" element={<PaymentFailed />} />
+            {/* Student Routes */}
             <Route path="/my-courses" element={<MyCourses />} />
-            <Route path="/learn/:id" element={<CourseLearningPage />} />
+            <Route path="/become-teacher" element={<BecomeTeacherPage />} />
+            {/* ❌ ĐÃ XÓA ROUTE /learn/:id Ở ĐÂY */}
+            {/* Teacher Routes */}
             <Route path="/teacher/dashboard" element={<TeacherDashboard />} />
             <Route
               path="/teacher/course/:id/edit"
               element={<EditCoursePage />}
             />
+            {/* ROUTE VÍ TIỀN */}
+            <Route path="/teacher/wallet" element={<TeacherWallet />} />
           </Route>
 
-          {/* 🟢 NHÓM 2: ADMIN (Dùng AdminLayout ĐỘC LẬP) */}
-          <Route path="/admin" element={<AdminLayout />}>
-            {/* Hiển thị Dashboard khi vào /admin hoặc /admin/dashboard */}
-            <Route index element={<AdminDashboard />} />
-            <Route path="dashboard" element={<AdminDashboard />} />
+          {/* 🟢 NHÓM 2: TRANG HỌC (Full màn hình, KHÔNG dùng MainLayout) */}
+          {/* 🔥 ĐƯỢC TÁCH RIÊNG RA ĐÂY */}
+          <Route path="/learn/:id" element={<CourseLearningPage />} />
 
-            {/* Các chức năng quản lý */}
+          {/* 🟢 NHÓM 3: ADMIN */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
             <Route path="courses" element={<AdminCourses />} />
             <Route path="revenue" element={<AdminRevenue />} />
             <Route path="users" element={<AdminUsers />} />
+            <Route path="banners" element={<BannerManager />} />
           </Route>
         </Routes>
       </BrowserRouter>

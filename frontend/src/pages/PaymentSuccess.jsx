@@ -5,13 +5,24 @@ const PaymentSuccess = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Lấy courseId từ URL query parameter (ví dụ: /payment-success?courseId=1)
+  const courseId = searchParams.get("courseId");
+
   useEffect(() => {
+    // Xác định đường dẫn chuyển hướng sau khi thanh toán thành công
+    // Nếu có courseId, có thể chuyển hướng đến trang khóa học cụ thể đã enroll
+    // Nếu không có, chuyển đến trang danh sách khóa học của tôi
+    const redirectPath = courseId
+      ? `/my-courses?courseId=${courseId}`
+      : "/my-courses";
+
     // Tự động chuyển trang sau 3s
     const timer = setTimeout(() => {
-      navigate("/my-courses");
+      navigate(redirectPath);
     }, 3000);
+
     return () => clearTimeout(timer);
-  }, [navigate]);
+  }, [navigate, courseId]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -39,7 +50,11 @@ const PaymentSuccess = () => {
           học của tôi...
         </p>
         <button
-          onClick={() => navigate("/my-courses")}
+          onClick={() =>
+            navigate(
+              courseId ? `/my-courses?courseId=${courseId}` : "/my-courses"
+            )
+          }
           className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium"
         >
           Về trang khóa học

@@ -4,7 +4,7 @@ import axiosClient from "../api/axiosClient";
 
 const HomePage = () => {
   const [courses, setCourses] = useState([]);
-  const [banner, setBanner] = useState(null); // [MỚI] State banner
+  const [banner, setBanner] = useState(null);
 
   useEffect(() => {
     // 1. Lấy khóa học
@@ -13,7 +13,7 @@ const HomePage = () => {
       if (Array.isArray(courseData)) setCourses(courseData);
     });
 
-    // 2. [MỚI] Lấy Banner active
+    // 2. Lấy Banner active
     axiosClient
       .get("/banners/active")
       .then((res) => {
@@ -31,9 +31,8 @@ const HomePage = () => {
 
   return (
     <div className="w-full font-sans">
-      {/* --- 1. BANNER QUẢNG CÁO (ĐỘNG) --- */}
+      {/* --- BANNER QUẢNG CÁO --- */}
       <div className="relative w-full h-[500px] bg-gray-900 flex justify-center items-center overflow-hidden">
-        {/* Ảnh nền */}
         <img
           src={
             banner
@@ -45,7 +44,6 @@ const HomePage = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
-        {/* Nội dung text */}
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto animate-fadeIn">
           <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-6 leading-tight drop-shadow-lg">
             {banner ? banner.title : "Chinh phục Tiếng Anh"}
@@ -74,7 +72,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* --- 2. DANH SÁCH KHÓA HỌC (Giữ nguyên) --- */}
+      {/* --- DANH SÁCH KHÓA HỌC --- */}
       <div id="courses" className="max-w-7xl mx-auto px-6 py-16 w-full">
         <div className="flex justify-between items-end mb-8">
           <div>
@@ -110,8 +108,17 @@ const HomePage = () => {
                       e.target.src = "https://via.placeholder.com/400x300";
                     }}
                   />
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-gray-800 shadow-sm">
-                    ⭐ 4.8
+                  {/* 🔥 HIỂN THỊ SỐ LƯỢNG HỌC VIÊN THẬT */}
+                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-gray-800 shadow-sm flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-3 w-3 text-indigo-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
+                    </svg>
+                    {course.studentCount || 0} học viên
                   </div>
                 </div>
 
@@ -130,12 +137,6 @@ const HomePage = () => {
                         style: "currency",
                         currency: "VND",
                       }).format(course.price)}
-                    </div>
-                    <div className="text-xs text-gray-400 line-through">
-                      {new Intl.NumberFormat("vi-VN", {
-                        style: "currency",
-                        currency: "VND",
-                      }).format(course.price * 1.3)}
                     </div>
                   </div>
                 </div>

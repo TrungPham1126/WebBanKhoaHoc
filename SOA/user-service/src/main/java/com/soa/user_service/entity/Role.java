@@ -10,22 +10,21 @@ public class Role {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    // Tên vai trò, ví dụ: "ROLE_STUDENT"
-    @Enumerated(EnumType.STRING) // Lưu tên Enum dưới dạng String
-    @Column(length = 20, unique = true, nullable = false)
-    private ERole name;
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20, unique = true)
+    private ERole name; // Tên Role (ROLE_STUDENT, ROLE_TEACHER, ...)
 
-    // Constructors, Getters, Setters...
-    
-    // Constructor tiện lợi
+    // 🔥 Constructor rỗng BẮT BUỘC cho Hibernate
     public Role() {
     }
 
+    // Constructor dùng trong DataSeeder cũ của bạn, nên giữ lại nếu bạn dùng nó ở
+    // nơi khác
     public Role(ERole name) {
         this.name = name;
     }
 
-    // Getters và Setters
+    // --- Getters and Setters ---
     public Integer getId() {
         return id;
     }

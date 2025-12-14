@@ -3,26 +3,33 @@ package com.soa.user_service.service.impl;
 import com.soa.user_service.dto.ChartDataDTO;
 import com.soa.user_service.dto.UserResponseDTO;
 import com.soa.user_service.dto.UserUpdateRequestDTO;
+import com.soa.user_service.entity.ERole;
+import com.soa.user_service.entity.Role;
 import com.soa.user_service.entity.User;
 import com.soa.user_service.exception.ResourceNotFoundException;
+import com.soa.user_service.repository.RoleRepository;
 import com.soa.user_service.repository.UserRepository;
 import com.soa.user_service.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired; // Cần import cái này
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     // --- SỬA LỖI TẠI ĐÂY: Thêm Constructor thủ công ---
     @Autowired
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, RoleRepository roleRepository) {
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
     }
     // --------------------------------------------------
 
@@ -104,5 +111,35 @@ public class UserServiceImpl implements UserService {
                         // [FIX] Ép kiểu an toàn qua Number để tránh lỗi ClassCastException
                         ((Number) row[1]).longValue()))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void registerAsTeacher(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Error: User not found."));
+
+        // Lấy Role TEACHER. Nếu không tìm thấy, log lỗi ra console và throw exception
+        Role teacherRole = roleRepository.findByName(ERole.ROLE_TEACHER)
+                .orElseThrow(() -> {
+                    System.err.println(
+                            "!!! LỖI QUAN TRỌNG: Role TEACHER không tồn tại trong DB. Vui lòng chạy DataSeeder. !!!");
+                    return new RuntimeException("Error: Teacher role is not found in database.");
+                });
+
+        // ... logic thêm role và save
+        Set<Role> roles = user.getRoles();
+
+        boolean isAlreadyTeacher = roles.stream()
+                .anyMatch(r -> r.getName().equals(ERole.ROLE_TEACHER));
+
+        if (isAlreadyTeacher) {
+            throw new RuntimeException("Bạn đã là giáo viên rồi!");
+        }
+
+        roles.add(teacherRole);
+        user.setRoles(roles);
+        userRepository.save(user);
+        System.out.println("✅ User " + email + " successfully upgraded to TEACHER.");
     }
 }

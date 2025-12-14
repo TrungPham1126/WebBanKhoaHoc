@@ -1,36 +1,75 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
-import { AuthContext } from "../context/AuthContext";
+import { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
+import axiosClient from "../api/axiosClient";
 
 const Navbar = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [keyword, setKeyword] = useState("");
+  const [balance, setBalance] = useState(0);
+  const [realProfile, setRealProfile] = useState({ fullName: "", avatar: "" });
 
-  // Xử lý tìm kiếm
   const handleSearch = (e) => {
     e.preventDefault();
-    if (keyword.trim()) {
-      navigate(`/?search=${encodeURIComponent(keyword)}`);
-    }
+    if (keyword.trim()) navigate(`/?search=${encodeURIComponent(keyword)}`);
   };
 
-  // Kiểm tra quyền
   const isTeacher = user?.roles?.includes("ROLE_TEACHER");
-  const isAdmin = user?.roles?.includes("ROLE_ADMIN"); // <--- THÊM DÒNG NÀY
+  const isAdmin = user?.roles?.includes("ROLE_ADMIN");
+
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount || 0);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.id) return;
+
+      // 1. Get User Info
+      try {
+        const userRes = await axiosClient.get(`/users/${user.id}`);
+        const userData = userRes.data?.data || userRes.data;
+        setRealProfile({
+          fullName: userData.fullName || "",
+          avatar: userData.avatar || "",
+        });
+      } catch (error) {
+        // console.warn("User info fetch warning:", error);
+      }
+
+      // 2. Get Wallet (Teacher Only)
+      if (isTeacher) {
+        try {
+          // Gọi đúng endpoint đã map ở backend: /api/v1/wallet/me
+          const walletRes = await axiosClient.get("/wallet/me", {
+            params: { userId: user.id },
+          });
+          const walletData = walletRes.data?.data || walletRes.data;
+          setBalance(walletData?.balance || 0);
+        } catch (error) {
+          console.error("Lỗi lấy ví tiền:", error);
+        }
+      }
+    };
+    fetchData();
+  }, [user, isTeacher]);
+
+  const displayName =
+    realProfile.fullName || user?.fullName || user?.email || "User";
+  const firstLetter = displayName.charAt(0).toUpperCase();
 
   return (
     <nav className="bg-white shadow-sm sticky top-0 z-50 h-[72px] flex items-center font-sans border-b border-gray-200">
       <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 flex items-center justify-between gap-4">
-        {/* 1. LOGO */}
         <Link
           to="/"
           className="flex-shrink-0 text-2xl font-bold text-purple-600 tracking-tight hover:text-purple-700 transition"
         >
           English course
         </Link>
-
-        {/* 2. SEARCH BAR */}
         <form
           onSubmit={handleSearch}
           className="flex-grow max-w-xl relative hidden md:block group mx-4"
@@ -62,8 +101,6 @@ const Navbar = () => {
             onChange={(e) => setKeyword(e.target.value)}
           />
         </form>
-
-        {/* 3. MENU CẤP 1 */}
         <div className="flex items-center gap-5 flex-shrink-0">
           <Link
             to="/"
@@ -71,21 +108,16 @@ const Navbar = () => {
           >
             Trang chủ
           </Link>
-
-          {/* LOGIC ĐĂNG NHẬP */}
           {user ? (
             <>
-              {/* --- PHẦN MENU ADMIN (Chỉ hiện khi là Admin) --- */}
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 px-3 py-2 rounded-lg transition border border-red-100"
+                  className="text-sm font-bold text-red-600 hover:text-red-700 bg-red-50 px-3 py-2 rounded-lg border border-red-100"
                 >
-                  ⚡ Quản trị hệ thống
+                  ⚡ Quản trị
                 </Link>
               )}
-              {/* ----------------------------------------------- */}
-
               {!isAdmin && (
                 <Link
                   to="/my-courses"
@@ -94,8 +126,6 @@ const Navbar = () => {
                   Khóa học của tôi
                 </Link>
               )}
-
-              {/* Menu cho Giáo viên */}
               {isTeacher && !isAdmin && (
                 <Link
                   to="/teacher/dashboard"
@@ -104,88 +134,101 @@ const Navbar = () => {
                   Quản lý khóa học
                 </Link>
               )}
-
-              {/* Menu cho Học sinh (chưa phải GV và ko phải Admin) */}
               {!isTeacher && !isAdmin && (
                 <Link
-                  to="/teach"
+                  to="/become-teacher"
                   className="text-sm font-medium text-gray-700 hover:text-purple-600 transition"
                 >
                   Trở thành giáo viên
                 </Link>
               )}
 
-              {/* User Avatar & Dropdown */}
               <div className="flex items-center gap-2 ml-2 relative group cursor-pointer h-full">
                 <span className="text-sm font-bold text-gray-800 max-w-[150px] truncate hidden sm:block">
-                  {user.fullName || user.email}
+                  {displayName}
                 </span>
-
-                <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg border-2 border-purple-100">
-                  {user.fullName
-                    ? user.fullName.charAt(0).toUpperCase()
-                    : user.email.charAt(0).toUpperCase()}
+                <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-bold text-lg border-2 border-purple-100 overflow-hidden">
+                  {realProfile.avatar ? (
+                    <img
+                      src={realProfile.avatar}
+                      alt="avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    firstLetter
+                  )}
                 </div>
-
-                {/* --- SỬA LẠI PHẦN DROPDOWN --- */}
-                {/* 1. Thẻ bao ngoài dùng pt-3 để tạo cầu nối vô hình (Invisible Bridge) */}
-                <div className="absolute right-0 top-full pt-3 w-48 hidden group-hover:block z-50 animate-fadeIn">
-                  
-                  {/* 2. Phần giao diện thực tế nằm bên trong */}
+                <div className="absolute right-0 top-full pt-3 w-64 hidden group-hover:block z-50 animate-fadeIn">
                   <div className="bg-white border border-gray-200 shadow-xl rounded-xl overflow-hidden">
-                    
-                    {/* Header nhỏ hiển thị email */}
                     <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tài khoản</p>
-                      <p className="text-sm text-gray-800 font-medium truncate" title={user.email}>
+                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Tài khoản
+                      </p>
+                      <p
+                        className="text-sm text-gray-800 font-medium truncate"
+                        title={user.email}
+                      >
                         {user.email}
                       </p>
+                      {isTeacher && (
+                        <div className="mt-2 flex items-center justify-between bg-green-50 px-3 py-2 rounded border border-green-100">
+                          <span className="text-xs text-green-700 font-bold">
+                            Số dư:
+                          </span>
+                          <span className="text-sm font-bold text-green-700">
+                            {formatCurrency(balance)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-
                     <div className="py-1">
                       {isAdmin && (
                         <Link
                           to="/admin"
-                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
-                          <span className="material-icons-outlined text-lg">admin_panel_settings</span>
                           Trang quản trị
                         </Link>
                       )}
-                      
-                      {/* Thêm link về trang cá nhân nếu cần */}
+                      {isTeacher && (
+                        <Link
+                          to="/teacher/wallet"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Quản lý Ví tiền
+                        </Link>
+                      )}
                       <Link
                         to="/my-courses"
-                        className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
-                         <span className="material-icons-outlined text-lg">school</span>
-                         Khóa học của tôi
+                        Khóa học của tôi
                       </Link>
-
                       <button
-                        onClick={logout}
-                        className="w-full text-left flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors font-medium"
+                        onClick={() => {
+                          logout();
+                          navigate("/login");
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 font-medium"
                       >
-                        <span className="material-icons-outlined text-lg">logout</span>
                         Đăng xuất
                       </button>
                     </div>
                   </div>
                 </div>
-                {/* ----------------------------- */}
               </div>
             </>
           ) : (
             <div className="flex gap-3 ml-4">
               <Link
                 to="/login"
-                className="text-sm font-bold text-gray-700 hover:text-purple-600 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition"
+                className="text-sm font-bold text-gray-700 hover:text-purple-600 px-3 py-2 border border-gray-300 rounded-md"
               >
                 Đăng nhập
               </Link>
               <Link
                 to="/signup"
-                className="text-sm font-bold text-white bg-gray-900 px-3 py-2 border border-gray-900 rounded-md hover:bg-gray-800 transition"
+                className="text-sm font-bold text-white bg-gray-900 px-3 py-2 border border-gray-900 rounded-md"
               >
                 Đăng ký
               </Link>
@@ -196,5 +239,4 @@ const Navbar = () => {
     </nav>
   );
 };
-
 export default Navbar;

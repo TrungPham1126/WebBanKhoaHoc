@@ -8,13 +8,18 @@ public class CourseResponseDTO {
     private String title;
     private String description;
     private BigDecimal price;
-    private String teacherName;
+
+    // Thông tin giáo viên
+    private Long teacherId;
+    private String teacherName; // Có thể dùng làm nơi chứa email tạm thời
+    private String teacherEmail;
+
     private Integer studentCount;
     private String imageUrl;
     private String status;
-
     private LocalDateTime createdAt;
 
+    // Getters & Setters
     public Long getId() {
         return id;
     }
@@ -47,12 +52,28 @@ public class CourseResponseDTO {
         this.price = price;
     }
 
+    public Long getTeacherId() {
+        return teacherId;
+    }
+
+    public void setTeacherId(Long teacherId) {
+        this.teacherId = teacherId;
+    }
+
     public String getTeacherName() {
         return teacherName;
     }
 
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
+    }
+
+    public String getTeacherEmail() {
+        return teacherEmail;
+    }
+
+    public void setTeacherEmail(String teacherEmail) {
+        this.teacherEmail = teacherEmail;
     }
 
     public Integer getStudentCount() {

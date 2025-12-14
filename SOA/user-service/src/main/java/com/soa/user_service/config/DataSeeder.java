@@ -2,6 +2,7 @@ package com.soa.user_service.config;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Optional; // Cần import Optional để xử lý an toàn
 
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -28,7 +29,7 @@ public class DataSeeder implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // [FIX] Kiểm tra từng Role, thiếu cái nào tạo cái đó
+        // 1. Tạo các Role cần thiết
         createRoleIfNotFound(ERole.ROLE_STUDENT);
         createRoleIfNotFound(ERole.ROLE_TEACHER);
         createRoleIfNotFound(ERole.ROLE_ADMIN);
@@ -42,9 +43,15 @@ public class DataSeeder implements CommandLineRunner {
             admin.setPassword(passwordEncoder.encode("123456"));
 
             Set<Role> roles = new HashSet<>();
-            Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-                    .orElseThrow(() -> new RuntimeException("Error: Role ADMIN is not found."));
-            roles.add(adminRole);
+
+            // Tìm Role ADMIN đã được tạo ở bước 1
+            Optional<Role> adminRoleOpt = roleRepository.findByName(ERole.ROLE_ADMIN);
+
+            if (adminRoleOpt.isPresent()) {
+                roles.add(adminRoleOpt.get());
+            } else {
+                throw new RuntimeException("Error: Role ADMIN is missing after seeding attempt.");
+            }
 
             admin.setRoles(roles);
 
@@ -55,10 +62,12 @@ public class DataSeeder implements CommandLineRunner {
         }
     }
 
-    // Hàm phụ trợ giúp code gọn hơn
+    // 🔥 SỬA: Sử dụng constructor rỗng và setter
     private void createRoleIfNotFound(ERole name) {
         if (roleRepository.findByName(name).isEmpty()) {
-            roleRepository.save(new Role(name));
+            Role role = new Role();
+            role.setName(name); // Gán tên Role
+            roleRepository.save(role);
             System.out.println(">>> Đã tạo Role mới: " + name);
         }
     }

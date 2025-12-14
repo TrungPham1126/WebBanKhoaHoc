@@ -12,8 +12,8 @@ public interface CourseService {
 
         List<CourseResponseDTO> getMyCourses(String teacherEmail);
 
-        CourseResponseDTO createCourse(CourseRequestDTO request, MultipartFile image, String teacherEmail)
-                        throws IOException;
+        CourseResponseDTO createCourse(CourseRequestDTO request, MultipartFile image, String teacherEmail,
+                        Long teacherId) throws IOException;
 
         CourseResponseDTO updateCourse(Long id, CourseRequestDTO request, MultipartFile image, String teacherEmail)
                         throws IOException;
@@ -22,13 +22,18 @@ public interface CourseService {
 
         SectionDTO createSection(Long courseId, SectionRequestDTO request, String teacherEmail);
 
-        List<SectionDTO> getCourseContent(Long courseId);
+        List<SectionDTO> getCourseContent(Long courseId, Long userId);
 
-        void approveCourse(Long id);
+        void markVideoAsCompleted(Long videoId, Long userId);
 
-        void rejectCourse(Long id);
+        void approveCourse(Long courseId);
+
+        void rejectCourse(Long courseId);
 
         List<CourseResponseDTO> getAllCoursesForAdmin();
 
         void deleteCourseByAdmin(Long id);
+
+        // 🔥 HÀM MỚI: Tăng số lượng học viên
+        void increaseStudentCount(Long courseId);
 }

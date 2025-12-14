@@ -1,49 +1,43 @@
-import { createContext, useState, useEffect } from "react";
-import axiosClient from "../api/axiosClient";
+import React, { createContext, useContext, useState, useEffect } from "react";
 
-export const AuthContext = createContext();
+// 1. Tạo Context và EXPORT NAMED (để sửa lỗi import { AuthContext })
+export const AuthContext = createContext(null);
 
+// 2. Tạo Provider
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Khởi tạo state user từ localStorage
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem("user");
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userInfo = localStorage.getItem("user");
-    if (token && userInfo) {
-      setUser(JSON.parse(userInfo));
-    }
-    setLoading(false);
-  }, []);
-
-  const login = async (email, password) => {
-    try {
-      const res = await axiosClient.post("/auth/login", { email, password });
-      // Lưu token và thông tin user
-      localStorage.setItem("token", res.data.token);
-
-      const userData = {
-        id: res.data.id,
-        email: res.data.email,
-        roles: res.data.roles,
-      };
-      localStorage.setItem("user", JSON.stringify(userData));
-      setUser(userData);
-      return { success: true };
-    } catch (error) {
-      return { success: false, message: "Sai email hoặc mật khẩu!" };
+  // Hàm login
+  const login = (userData) => {
+    setUser(userData);
+    localStorage.setItem("user", JSON.stringify(userData));
+    if (userData.token) {
+      localStorage.setItem("token", userData.token);
     }
   };
 
+  // Hàm logout
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
     setUser(null);
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
+
+// 3. Export hook useAuth (Cách dùng hiện đại)
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
+
+// 4. Default export (Để hỗ trợ import AuthContext from ...)
+export default AuthContext;

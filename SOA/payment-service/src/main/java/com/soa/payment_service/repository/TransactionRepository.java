@@ -11,58 +11,53 @@ import java.util.List;
 @Repository
 public interface TransactionRepository extends JpaRepository<TransactionHistory, Long> {
 
-    // --- CRUD mặc định ---
-    TransactionHistory findByTransactionId(String transactionId);
+        // --- CRUD mặc định ---
+        TransactionHistory findByTransactionId(String transactionId);
 
-    List<TransactionHistory> findByTeacherEmail(String teacherEmail);
+        // ✅ NÊN THÊM: Tìm theo ID (Nhanh & Chuẩn hơn Email)
+        List<TransactionHistory> findByTeacherId(Long teacherId);
 
-    List<TransactionHistory> findByStudentEmail(String studentEmail);
+        List<TransactionHistory> findByStudentId(Long studentId);
 
-    // --- THỐNG KÊ (DASHBOARD) ---
+        // Giữ lại tìm theo Email nếu cần (để tương thích code cũ)
+        List<TransactionHistory> findByTeacherEmail(String teacherEmail);
 
-    /**
-     * Lấy tổng doanh thu nhóm theo tháng/năm.
-     * Sử dụng cho biểu đồ tổng quan/lịch sử.
-     * Lưu ý: Cần đảm bảo ChartDataDTO có constructor (String, BigDecimal) để hứng
-     * SUM.
-     */
-    @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
-            "FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m'), SUM(t.totalAmount)) " +
-            "FROM TransactionHistory t " +
-            "GROUP BY FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m') " +
-            "ORDER BY FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m') ASC")
-    List<ChartDataDTO> getMonthlyRevenue();
+        List<TransactionHistory> findByStudentEmail(String studentEmail);
 
-    /**
-     * Lấy tổng doanh thu nhóm theo ngày.
-     * Dùng cho Line Chart hiển thị chi tiết biến động doanh thu theo ngày trong
-     * tháng/tuần.
-     */
-    @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
-            "FUNCTION('DATE_FORMAT', t.createdAt, '%d/%m'), SUM(t.totalAmount)) " +
-            "FROM TransactionHistory t " +
-            // Group by cả format display (%d/%m) và giá trị date thật để sắp xếp đúng thứ
-            // tự
-            "GROUP BY FUNCTION('DATE_FORMAT', t.createdAt, '%d/%m'), FUNCTION('DATE', t.createdAt) " +
-            "ORDER BY FUNCTION('DATE', t.createdAt) ASC")
-    List<ChartDataDTO> getDailyRevenue();
+        // --- THỐNG KÊ (DASHBOARD ADMIN) ---
 
-    /**
-     * Lấy Top 5 khóa học bán chạy nhất (tính theo số lượng giao dịch).
-     * Dùng cho Doughnut Chart (Biểu đồ tròn).
-     * Lưu ý: Query này trả về COUNT (Long), ChartDataDTO cần có constructor
-     * (String, Long).
-     */
-    @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
-            "t.courseTitle, COUNT(t.id)) " +
-            "FROM TransactionHistory t " +
-            "GROUP BY t.courseTitle " +
-            "ORDER BY COUNT(t.id) DESC")
-    List<ChartDataDTO> getTopSellingCourses();
+        /**
+         * Lấy tổng doanh thu nhóm theo tháng/năm.
+         */
+        @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
+                        "FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m'), SUM(t.totalAmount)) " +
+                        "FROM TransactionHistory t " +
+                        "GROUP BY FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m') " +
+                        "ORDER BY FUNCTION('DATE_FORMAT', t.createdAt, '%Y-%m') ASC")
+        List<ChartDataDTO> getMonthlyRevenue();
 
-    /**
-     * Lấy 5 giao dịch gần nhất, sắp xếp theo thời gian tạo giảm dần.
-     * Dùng cho bảng "Recent Transactions" trong Dashboard.
-     */
-    List<TransactionHistory> findTop5ByOrderByCreatedAtDesc();
+        /**
+         * Lấy tổng doanh thu nhóm theo ngày.
+         */
+        @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
+                        "FUNCTION('DATE_FORMAT', t.createdAt, '%d/%m'), SUM(t.totalAmount)) " +
+                        "FROM TransactionHistory t " +
+                        "GROUP BY FUNCTION('DATE_FORMAT', t.createdAt, '%d/%m'), FUNCTION('DATE', t.createdAt) " +
+                        "ORDER BY FUNCTION('DATE', t.createdAt) ASC")
+        List<ChartDataDTO> getDailyRevenue();
+
+        /**
+         * Lấy Top 5 khóa học bán chạy nhất.
+         */
+        @Query("SELECT new com.soa.payment_service.dto.ChartDataDTO(" +
+                        "t.courseTitle, COUNT(t.id)) " +
+                        "FROM TransactionHistory t " +
+                        "GROUP BY t.courseTitle " +
+                        "ORDER BY COUNT(t.id) DESC")
+        List<ChartDataDTO> getTopSellingCourses();
+
+        /**
+         * Lấy 5 giao dịch gần nhất.
+         */
+        List<TransactionHistory> findTop5ByOrderByCreatedAtDesc();
 }

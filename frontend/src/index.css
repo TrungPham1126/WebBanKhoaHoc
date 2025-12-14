@@ -11,7 +11,7 @@
 
   /* Tùy chọn: giữ lại chế độ màu nếu muốn */
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
+  color: rgba(0, 0, 0, 0.87);
   background-color: #ffffff; /* Đặt nền trắng mặc định cho sạch */
 
   font-synthesis: none;

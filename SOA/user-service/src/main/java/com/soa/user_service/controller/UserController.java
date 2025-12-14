@@ -19,29 +19,29 @@ public class UserController {
 
     private final UserService userService;
 
-    // 1. Lấy danh sách tất cả User (Chỉ ADMIN được xem)
+    // 1. Lấy danh sách tất cả User (Chỉ ADMIN)
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    // 2. Lấy thông tin User theo ID (Admin hoặc chính chủ - logic này có thể xử lý
-    // thêm ở Gateway hoặc Service)
+    // 2. Lấy thông tin User theo ID
+    // --- FIX: Cho phép user đã đăng nhập được xem (để Navbar lấy avatar/tên) ---
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
-    // 3. Lấy thông tin cá nhân (Profile) của người đang đăng nhập
+    // 3. Lấy thông tin cá nhân (Profile)
     @GetMapping("/profile")
     public ResponseEntity<UserResponseDTO> getMyProfile(Authentication authentication) {
-        String email = authentication.getName(); // Lấy email từ JWT
+        String email = authentication.getName();
         return ResponseEntity.ok(userService.getMyProfile(email));
     }
 
-    // 4. Cập nhật thông tin cá nhân
+    // 4. Cập nhật thông tin
     @PutMapping("/profile")
     public ResponseEntity<UserResponseDTO> updateMyProfile(
             @RequestBody UserUpdateRequestDTO request,
@@ -62,5 +62,15 @@ public class UserController {
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<List<ChartDataDTO>> getUserStats() {
         return ResponseEntity.ok(userService.getNewUsersStats());
+    }
+
+    @PostMapping("/become-teacher")
+    public ResponseEntity<?> becomeTeacher(Authentication authentication) {
+        try {
+            userService.registerAsTeacher(authentication.getName());
+            return ResponseEntity.ok("Chúc mừng! Bạn đã trở thành giáo viên. Vui lòng đăng nhập lại.");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

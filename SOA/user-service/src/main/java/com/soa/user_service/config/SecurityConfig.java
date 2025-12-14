@@ -5,6 +5,7 @@ import com.soa.user_service.util.AuthTokenFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod; // Đừng quên import dòng này
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -48,14 +49,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Tắt CSRF vì dùng JWT
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Các API công khai của User Service
-                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        // Cho phép API Auth
+                        .requestMatchers("/api/v1/auth/**", "/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
-                        // Tất cả các request khác đều phải xác thực
+                        // --- FIX: Cho phép xem thông tin User (GET) nếu đã đăng nhập ---
+                        .requestMatchers(HttpMethod.GET, "/api/v1/users/**", "/users/**").authenticated()
+
                         .anyRequest().authenticated());
 
         http.authenticationProvider(authenticationProvider());

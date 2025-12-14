@@ -14,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/banners")
 @RequiredArgsConstructor
+// 🔥 ĐÃ XÓA @CrossOrigin ĐỂ TRÁNH XUNG ĐỘT VỚI SECURITY CONFIG
 public class BannerController {
 
     private final BannerServiceImpl bannerService;
@@ -21,7 +22,12 @@ public class BannerController {
     // Public: Lấy banner đang active để hiện trang chủ
     @GetMapping("/active")
     public ResponseEntity<Banner> getActive() {
-        return ResponseEntity.ok(bannerService.getActiveBanner());
+        // 🔥 Gợi ý: Nếu không có banner nào active, trả về 204 No Content
+        Banner banner = bannerService.getActiveBanner();
+        if (banner == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(banner);
     }
 
     // Admin: Lấy danh sách

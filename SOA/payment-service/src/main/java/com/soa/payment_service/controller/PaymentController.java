@@ -6,6 +6,7 @@ import com.soa.payment_service.dto.PaymentDTO;
 import com.soa.payment_service.dto.RestResponse;
 import com.soa.payment_service.entity.TransactionHistory;
 import com.soa.payment_service.repository.TransactionRepository;
+import com.soa.payment_service.service.WalletService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,7 +19,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -42,6 +42,9 @@ public class PaymentController {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    @Autowired
+    private WalletService walletService;
+
     public PaymentController(VNPayConfig vnPayConfig, RestTemplate restTemplate) {
         this.vnPayConfig = vnPayConfig;
         this.restTemplate = restTemplate;
@@ -55,7 +58,12 @@ public class PaymentController {
             @RequestParam("courseId") Long courseId,
             @RequestParam("courseTitle") String courseTitle,
             @RequestParam("email") String studentEmail,
-            @RequestParam("teacherEmail") String teacherEmail) throws UnsupportedEncodingException {
+            @RequestParam("teacherEmail") String teacherEmail,
+            @RequestParam("teacherId") Long teacherId) // ID CẦN KIỂM TRA
+            throws UnsupportedEncodingException {
+
+        // 🔥 LOG KIỂM TRA: XÁC ĐỊNH ID GIÁO VIÊN NHẬN ĐƯỢC TỪ FRONTEND
+        logger.info(">>> [PAYMENT START] Course ID: {}, Teacher ID NHẬN TỪ FRONTEND: {}", courseId, teacherId);
 
         String vnp_TxnRef = vnPayConfig.getRandomNumber(8);
         String vnp_IpAddr = vnPayConfig.getIpAddress(req);
@@ -74,11 +82,13 @@ public class PaymentController {
         vnp_Params.put("vnp_Locale", "vn");
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
 
+        // Gắn teacherId vào URL trả về
         String returnUrlWithData = vnPayConfig.vnp_ReturnUrl
                 + "?courseId=" + courseId
                 + "&studentEmail=" + URLEncoder.encode(studentEmail, StandardCharsets.US_ASCII.toString())
                 + "&teacherEmail=" + URLEncoder.encode(teacherEmail, StandardCharsets.US_ASCII.toString())
-                + "&courseTitle=" + URLEncoder.encode(courseTitle, StandardCharsets.US_ASCII.toString());
+                + "&courseTitle=" + URLEncoder.encode(courseTitle, StandardCharsets.US_ASCII.toString())
+                + "&teacherId=" + teacherId;
 
         vnp_Params.put("vnp_ReturnUrl", returnUrlWithData);
 
@@ -125,7 +135,7 @@ public class PaymentController {
         return ResponseEntity.ok(paymentDTO);
     }
 
-    // --- XỬ LÝ KẾT QUẢ TRẢ VỀ TỪ VNPAY ---
+    // --- XỬ LÝ KẾT QUẢ TRẢ VỀ ---
     @GetMapping("/vnpay-return")
     public void vnpayReturn(
             @RequestParam(value = "vnp_ResponseCode") String responseCode,
@@ -135,49 +145,54 @@ public class PaymentController {
             @RequestParam(value = "courseTitle") String courseTitle,
             @RequestParam(value = "studentEmail") String studentEmail,
             @RequestParam(value = "teacherEmail") String teacherEmail,
+            @RequestParam(value = "teacherId") Long teacherId, // ID SAI VẪN ĐƯỢC NHẬN
             HttpServletResponse response) throws IOException {
 
         if ("00".equals(responseCode)) {
-            // 1. Lưu lịch sử giao dịch
+            // 1. Tính toán tiền
             BigDecimal totalAmount = new BigDecimal(vnpAmount).divide(new BigDecimal(100));
             BigDecimal adminShare = totalAmount.multiply(new BigDecimal("0.40"));
             BigDecimal teacherShare = totalAmount.subtract(adminShare);
 
+            // 2. Lưu lịch sử
             TransactionHistory history = new TransactionHistory();
             history.setTransactionId(txnRef);
             history.setCourseId(courseId);
             history.setCourseTitle(courseTitle);
             history.setStudentEmail(studentEmail);
             history.setTeacherEmail(teacherEmail);
+            history.setTeacherId(teacherId);
             history.setTotalAmount(totalAmount);
             history.setAdminCommission(adminShare);
             history.setTeacherReceived(teacherShare);
 
             transactionRepository.save(history);
 
-            // 2. Gọi Enrollment Service để kích hoạt khóa học
+            // 3. CỘNG TIỀN VÀO VÍ GIÁO VIÊN
             try {
-                logger.info(">>> [DEBUG] Kích hoạt khóa học cho: {}", studentEmail);
-                callEnrollmentService(courseId, courseTitle, studentEmail);
-                // 3. Redirect về Frontend (Thành công)
+                // 🔥 LOG KIỂM TRA: ID ĐƯỢC DÙNG ĐỂ CỘNG VÍ
+                logger.info(">>> [PAYMENT SUCCESS] Đang cộng ví cho Teacher ID: {} số tiền: {}", teacherId,
+                        teacherShare);
+                walletService.processRevenueShare(teacherId, totalAmount, courseTitle);
+            } catch (Exception e) {
+                logger.error("!!! [ERROR] Lỗi cộng ví: ", e);
+            }
+
+            // 4. Kích hoạt khóa học (Enrollment)
+            try {
+                callEnrollmentService(courseId, courseTitle, studentEmail, teacherId);
                 response.sendRedirect("http://localhost:5173/payment-success?courseId=" + courseId);
             } catch (Exception e) {
-                logger.error("!!! [ERROR] Lỗi gọi Enrollment Service: ", e);
-                if (e instanceof HttpClientErrorException) {
-                    String responseBody = ((HttpClientErrorException) e).getResponseBodyAsString();
-                    logger.error(">>> [ERROR BODY] Chi tiết lỗi từ Enrollment: {}", responseBody);
-                }
-                // Nếu lỗi kích hoạt khóa học nhưng tiền đã trừ -> Vẫn báo lỗi để Admin check
-                response.sendRedirect("http://localhost:5173/payment-failed?error=enrollment_failed");
+                logger.error("!!! [ERROR] Lỗi Enrollment: ", e);
+                response.sendRedirect("http://localhost:5173/payment-failed?code=enrollment_failed");
             }
         } else {
-            // Lỗi từ VNPay
-            response.sendRedirect("http://localhost:5173/payment-failed");
+            response.sendRedirect("http://localhost:5173/payment-failed?code=vnpay_failed");
         }
     }
 
-    private void callEnrollmentService(Long courseId, String courseTitle, String email) {
-        // [FIX] Dùng localhost thay vì soa-enrollment-service khi chạy Local
+    // Hàm gọi Enrollment Service
+    private void callEnrollmentService(Long courseId, String courseTitle, String email, Long teacherId) {
         String enrollmentUrl = "http://localhost:8084/api/v1/enrollments/internal/enroll";
 
         Map<String, Object> requestBody = new HashMap<>();
@@ -185,6 +200,7 @@ public class PaymentController {
         requestBody.put("courseTitle", courseTitle);
         requestBody.put("studentEmail", email);
         requestBody.put("imageUrl", "default.png");
+        requestBody.put("teacherId", teacherId);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -194,12 +210,10 @@ public class PaymentController {
         restTemplate.postForObject(enrollmentUrl, entity, String.class);
     }
 
-    // --- CÁC API THỐNG KÊ (DASHBOARD LEVEL 4) ---
-
+    // --- Các API thống kê ---
     @GetMapping("/history")
     public ResponseEntity<List<TransactionHistory>> getAllTransactions() {
         List<TransactionHistory> list = transactionRepository.findAll();
-        // Sort giảm dần theo ID để thấy cái mới nhất
         list.sort((a, b) -> b.getId().compareTo(a.getId()));
         return ResponseEntity.ok(list);
     }
@@ -214,18 +228,15 @@ public class PaymentController {
     public ResponseEntity<RestResponse<Map<String, Object>>> getDashboardStats() {
         Map<String, Object> data = new HashMap<>();
 
-        // 1. Lấy dữ liệu thô từ DB
         List<ChartDataDTO> dailyRevenue = transactionRepository.getDailyRevenue();
         List<ChartDataDTO> topCourses = transactionRepository.getTopSellingCourses()
                 .stream().limit(5).collect(Collectors.toList());
         List<TransactionHistory> recentTransactions = transactionRepository.findTop5ByOrderByCreatedAtDesc();
 
-        // 2. Tính tổng doanh thu
         BigDecimal totalRevenue = dailyRevenue.stream()
                 .map(ChartDataDTO::getValue)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // 3. Đóng gói response
         data.put("revenueChart", dailyRevenue);
         data.put("topCourses", topCourses);
         data.put("recentTransactions", recentTransactions);

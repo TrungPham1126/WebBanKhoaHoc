@@ -6,7 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
+import java.nio.charset.StandardCharsets; // 🔥 Đừng quên import cái này
 import java.security.Key;
 import java.util.List;
 
@@ -18,7 +18,8 @@ public class JwtUtils {
     private String jwtSecret;
 
     private Key key() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
+        // 🔥 SỬA LẠI: Thêm StandardCharsets.UTF_8 vào đây
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
     }
 
     public boolean validateJwtToken(String authToken) {
@@ -36,9 +37,18 @@ public class JwtUtils {
                 .parseClaimsJws(token).getBody().getSubject();
     }
 
+    // 🔥 Lấy ID từ Token
+    public Long getIdFromJwtToken(String token) {
+        try {
+            return Jwts.parserBuilder().setSigningKey(key()).build()
+                    .parseClaimsJws(token).getBody().get("id", Long.class);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public List<String> getRolesFromJwtToken(String token) {
-        Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
-                .parseClaimsJws(token).getBody();
-        return claims.get("roles", List.class);
+        return Jwts.parserBuilder().setSigningKey(key()).build()
+                .parseClaimsJws(token).getBody().get("roles", List.class);
     }
 }

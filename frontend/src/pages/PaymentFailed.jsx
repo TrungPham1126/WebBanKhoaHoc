@@ -2,7 +2,19 @@ import { useSearchParams, Link } from "react-router-dom";
 
 const PaymentFailed = () => {
   const [searchParams] = useSearchParams();
-  const error = searchParams.get("error");
+  // 🔥 SỬA LỖI: Đổi từ 'error' sang 'code' để khớp với Backend
+  const code = searchParams.get("code");
+
+  let errorMessage = "Giao dịch đã bị hủy hoặc gặp lỗi trong quá trình xử lý.";
+
+  if (code === "enrollment_failed") {
+    errorMessage =
+      "Thanh toán đã trừ tiền nhưng kích hoạt khóa học gặp lỗi. Vui lòng liên hệ Admin.";
+  } else if (code === "vnpay_failed") {
+    errorMessage =
+      "Giao dịch VNPAY thất bại. Vui lòng kiểm tra lại thông tin thanh toán hoặc thử lại.";
+  }
+  // Nếu code là null (ví dụ: /payment-failed), sẽ dùng errorMessage mặc định.
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
@@ -29,11 +41,7 @@ const PaymentFailed = () => {
           Thanh toán thất bại!
         </h2>
 
-        <p className="text-gray-600 mb-6">
-          {error === "enrollment_failed"
-            ? "Thanh toán đã trừ tiền nhưng kích hoạt khóa học gặp lỗi. Vui lòng liên hệ Admin."
-            : "Giao dịch đã bị hủy hoặc gặp lỗi trong quá trình xử lý."}
-        </p>
+        <p className="text-gray-600 mb-6">{errorMessage}</p>
 
         <div className="flex flex-col gap-3">
           <Link

@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosClient from "../../api/axiosClient";
 import CourseModal from "../../components/teacher/CourseModal";
+import { useAuth } from "../../context/AuthContext"; // 🔥 IMPORT BỔ SUNG
 
 const TeacherDashboard = () => {
   const navigate = useNavigate();
+  const { user } = useAuth(); // 🔥 LẤY THÔNG TIN USER ĐANG ĐĂNG NHẬP
+
   const [courses, setCourses] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,7 +15,8 @@ const TeacherDashboard = () => {
   const fetchCourses = async () => {
     try {
       const res = await axiosClient.get("/courses/my-courses");
-      setCourses(res.data);
+      // Backend có thể trả về res.data.data hoặc res.data tùy cấu trúc RestResponse
+      setCourses(res.data.data || res.data);
     } catch (error) {
       console.error("Lỗi tải khóa học:", error);
     } finally {
@@ -21,8 +25,14 @@ const TeacherDashboard = () => {
   };
 
   useEffect(() => {
-    fetchCourses();
-  }, []);
+    // Kiểm tra xem user đã load chưa trước khi fetch
+    if (user) {
+      fetchCourses();
+    } else if (!user && !isLoading) {
+      // Nếu không có user (chưa đăng nhập hoặc là student/admin)
+      // Có thể thêm logic redirect hoặc thông báo lỗi
+    }
+  }, [user]); // Re-fetch khi user thay đổi (đăng nhập)
 
   const handleDelete = async (id) => {
     if (
@@ -45,8 +55,14 @@ const TeacherDashboard = () => {
     navigate(`/teacher/course/${id}/edit`);
   };
 
-  // --- HÀM XỬ LÝ TẠO MỚI (ĐÃ FIX LỖI) ---
+  // --- HÀM XỬ LÝ TẠO MỚI (FIX LỖI teacherId=NULL) ---
   const handleCreateCourse = async (formData) => {
+    if (!user || !user.id || !user.email) {
+      return alert(
+        "Lỗi xác thực: Không tìm thấy thông tin giáo viên để tạo khóa học."
+      );
+    }
+
     const data = new FormData();
     // Đảm bảo tên trường khớp chính xác với @RequestParam trong Controller Java
     data.append("title", formData.title);
@@ -56,6 +72,11 @@ const TeacherDashboard = () => {
     if (formData.image) {
       data.append("image", formData.image);
     }
+
+    // 🔥 FIX QUAN TRỌNG: GỬI teacherId và teacherEmail LÊN BACKEND
+    // Điều này đảm bảo CourseServiceImpl.createCourse nhận được giá trị hợp lệ
+    data.append("teacherId", user.id);
+    data.append("teacherEmail", user.email);
 
     try {
       // Gửi request với header multipart/form-data rõ ràng
@@ -70,7 +91,6 @@ const TeacherDashboard = () => {
       alert("Tạo khóa học thành công!");
     } catch (error) {
       console.error("Chi tiết lỗi:", error);
-      // Hiển thị lỗi chi tiết từ Backend trả về (nếu có)
       const msg =
         error.response?.data?.message ||
         error.response?.data?.error ||
@@ -84,6 +104,88 @@ const TeacherDashboard = () => {
       <div className="p-10 text-center text-gray-500">Đang tải dữ liệu...</div>
     );
 
+  // Dữ liệu khóa học trống
+  if (courses.length === 0 && !isLoading) {
+    // ... (Hiển thị trang tạo khóa học lần đầu - giữ nguyên logic của bạn) ...
+    return (
+      <div className="max-w-7xl mx-auto px-6 py-10 min-h-screen bg-gray-50 font-sans">
+        {/* Header tạo khóa học mới */}
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Quản lý khóa học
+            </h1>
+            <p className="text-gray-500 mt-1">
+              Quản lý các khóa học và nội dung giảng dạy của bạn.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition shadow-lg shadow-purple-500/30 flex items-center gap-2"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            Tạo khóa học mới
+          </button>
+        </div>
+
+        {/* Nội dung khi không có khóa học */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-16 text-center">
+            <div className="bg-purple-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={1.5}
+                stroke="currentColor"
+                className="w-10 h-10 text-purple-500"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900">
+              Chưa có khóa học nào
+            </h3>
+            <p className="text-gray-500 mt-1">
+              Bắt đầu chia sẻ kiến thức của bạn bằng cách tạo khóa học đầu tiên.
+            </p>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="mt-6 text-purple-600 font-bold hover:underline"
+            >
+              Tạo khóa học ngay →
+            </button>
+          </div>
+        </div>
+
+        <CourseModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSubmit={handleCreateCourse}
+          initialData={null}
+        />
+      </div>
+    );
+  }
+
+  // Hiển thị danh sách khóa học
   return (
     <div className="max-w-7xl mx-auto px-6 py-10 min-h-screen bg-gray-50 font-sans">
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
@@ -211,39 +313,6 @@ const TeacherDashboard = () => {
             </tbody>
           </table>
         </div>
-
-        {courses.length === 0 && (
-          <div className="p-16 text-center">
-            <div className="bg-purple-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="w-10 h-10 text-purple-500"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25"
-                />
-              </svg>
-            </div>
-            <h3 className="text-lg font-bold text-gray-900">
-              Chưa có khóa học nào
-            </h3>
-            <p className="text-gray-500 mt-1">
-              Bắt đầu chia sẻ kiến thức của bạn bằng cách tạo khóa học đầu tiên.
-            </p>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="mt-6 text-purple-600 font-bold hover:underline"
-            >
-              Tạo khóa học ngay →
-            </button>
-          </div>
-        )}
       </div>
 
       <CourseModal

@@ -22,4 +22,6 @@ public interface UserService {
     void deleteUser(Long id);
 
     List<ChartDataDTO> getNewUsersStats();
+
+    void registerAsTeacher(String email);
 }

@@ -14,18 +14,22 @@ const EditCoursePage = () => {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // State Form
+  // State quản lý hiển thị Form
   const [showVideoForm, setShowVideoForm] = useState(null);
   const [showExerciseForm, setShowExerciseForm] = useState(null);
 
-  // --- NÂNG CẤP: Hỗ trợ nhiều file ---
-  const [videoFiles, setVideoFiles] = useState([]); // Lưu danh sách file (Array)
-  const [videoTitle, setVideoTitle] = useState(""); // Chỉ dùng khi up 1 file
+  // State cho Upload Video
+  const [videoFiles, setVideoFiles] = useState([]);
+  const [videoTitle, setVideoTitle] = useState("");
 
+  // 🔥 STATE CHO BÀI TẬP (Đã cập nhật thêm type và file)
   const [exerciseData, setExerciseData] = useState({
     title: "",
     description: "",
+    type: "WRITING", // Mặc định
+    file: null, // File đề bài (PDF/Docx...)
   });
+
   const [previewVideo, setPreviewVideo] = useState(null);
 
   useEffect(() => {
@@ -84,7 +88,6 @@ const EditCoursePage = () => {
     }
   };
 
-  // --- XỬ LÝ UPLOAD NHIỀU VIDEO ---
   const handleAddVideo = async (sectionId) => {
     if (!videoFiles || videoFiles.length === 0)
       return alert("Vui lòng chọn ít nhất 1 video");
@@ -97,18 +100,12 @@ const EditCoursePage = () => {
 
     if (confirmMsg && !window.confirm(confirmMsg)) return;
 
-    // Chuyển FileList sang Array để dùng map
     const filesArray = Array.from(videoFiles);
 
     try {
-      // Gửi request song song cho tất cả file
       await Promise.all(
         filesArray.map((file) => {
           const formData = new FormData();
-
-          // Logic đặt tên:
-          // - Nếu up 1 file và có nhập Title -> Dùng Title
-          // - Nếu up nhiều file hoặc không nhập Title -> Dùng tên file gốc (bỏ đuôi .mp4)
           let titleToUse = file.name.replace(/\.[^/.]+$/, "");
           if (filesArray.length === 1 && videoTitle.trim() !== "") {
             titleToUse = videoTitle;
@@ -118,43 +115,56 @@ const EditCoursePage = () => {
           formData.append("file", file);
           formData.append("sectionId", sectionId);
 
-          // Gọi API cho từng file
           return axiosClient.post(`/videos/courses/${id}`, formData, {
             headers: { "Content-Type": "multipart/form-data" },
           });
         })
       );
 
-      // Sau khi vòng lặp gửi request xong (Backend trả về PROCESSING)
       alert(`Đã đẩy ${totalFiles} video vào hàng đợi xử lý ngầm!`);
-
       setShowVideoForm(null);
       setVideoFiles([]);
       setVideoTitle("");
-      fetchContent(); // Reload danh sách
+      fetchContent();
     } catch (e) {
       console.error(e);
       alert("Có lỗi xảy ra khi upload một số video. Vui lòng kiểm tra lại.");
     }
   };
 
+  // 🔥 HÀM THÊM BÀI TẬP (ĐÃ SỬA LOGIC)
   const handleAddExercise = async (videoId) => {
     if (!exerciseData.title) return alert("Nhập tiêu đề bài tập");
+
     const formData = new FormData();
     formData.append("title", exerciseData.title);
     formData.append("description", exerciseData.description);
     formData.append("videoId", videoId);
-    formData.append("type", "WRITING");
+    formData.append("type", exerciseData.type); // Gửi loại bài tập
     formData.append("isFree", false);
 
+    // Gửi file nếu có
+    if (exerciseData.file) {
+      formData.append("file", exerciseData.file);
+    }
+
     try {
-      await axiosClient.post(`/exercises`, formData);
+      await axiosClient.post(`/exercises`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       alert("Thêm bài tập thành công!");
       setShowExerciseForm(null);
-      setExerciseData({ title: "", description: "" });
+      // Reset form
+      setExerciseData({
+        title: "",
+        description: "",
+        type: "WRITING",
+        file: null,
+      });
       fetchContent();
     } catch (e) {
-      alert("Lỗi thêm bài tập");
+      console.error(e);
+      alert("Lỗi thêm bài tập: " + (e.response?.data?.message || "Lỗi server"));
     }
   };
 
@@ -182,6 +192,7 @@ const EditCoursePage = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-10 font-sans">
+      {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold text-gray-900">Biên tập nội dung</h1>
         <button
@@ -192,6 +203,7 @@ const EditCoursePage = () => {
         </button>
       </div>
 
+      {/* Course Info Card */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8 flex gap-6 items-start">
         <img
           src={
@@ -238,6 +250,7 @@ const EditCoursePage = () => {
         </button>
       </div>
 
+      {/* Sections & Lessons */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-purple-700">
@@ -273,7 +286,7 @@ const EditCoursePage = () => {
                 </button>
               </div>
 
-              {/* --- FORM UPLOAD MULTIPLE --- */}
+              {/* Form Upload Video */}
               {showVideoForm === section.id && (
                 <div className="p-4 bg-purple-50 border-b border-purple-100 animate-fadeIn">
                   <h4 className="font-bold text-sm mb-2 text-purple-800">
@@ -281,20 +294,17 @@ const EditCoursePage = () => {
                   </h4>
                   <div className="flex flex-col sm:flex-row gap-3 items-start">
                     <div className="flex-grow w-full space-y-2">
-                      {/* Input File Multiple */}
                       <input
                         type="file"
                         accept="video/*"
-                        multiple // <--- CHO PHÉP CHỌN NHIỀU FILE
+                        multiple
                         className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 cursor-pointer"
                         onChange={(e) => setVideoFiles(e.target.files)}
                       />
-
-                      {/* Logic hiển thị Input Title */}
                       {videoFiles && videoFiles.length > 1 ? (
                         <p className="text-xs text-gray-500 italic pl-2">
-                          * Bạn đã chọn {videoFiles.length} file. Tiêu đề video
-                          sẽ được đặt tự động theo tên file.
+                          * Bạn đã chọn {videoFiles.length} file. Tiêu đề sẽ tự
+                          động lấy theo tên file.
                         </p>
                       ) : (
                         <input
@@ -316,6 +326,7 @@ const EditCoursePage = () => {
                 </div>
               )}
 
+              {/* Lesson List */}
               <div className="divide-y divide-gray-100 bg-white">
                 {section.lessons &&
                   section.lessons.map((lesson) => (
@@ -353,25 +364,25 @@ const EditCoursePage = () => {
 
                       <div className="flex items-center gap-2 flex-shrink-0">
                         {lesson.type === "video" && (
-                          <button
-                            onClick={() =>
-                              setPreviewVideo({
-                                url: `http://localhost:8080${lesson.videoUrl}`,
-                                title: lesson.title,
-                              })
-                            }
-                            className="text-xs text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-50 transition flex items-center gap-1"
-                          >
-                            Xem
-                          </button>
-                        )}
-                        {lesson.type === "video" && (
-                          <button
-                            onClick={() => setShowExerciseForm(lesson.id)}
-                            className="text-xs text-indigo-600 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-50 transition"
-                          >
-                            + Bài tập
-                          </button>
+                          <>
+                            <button
+                              onClick={() =>
+                                setPreviewVideo({
+                                  url: `http://localhost:8080${lesson.videoUrl}`,
+                                  title: lesson.title,
+                                })
+                              }
+                              className="text-xs text-blue-600 border border-blue-200 px-2 py-1 rounded hover:bg-blue-50 transition flex items-center gap-1"
+                            >
+                              Xem
+                            </button>
+                            <button
+                              onClick={() => setShowExerciseForm(lesson.id)}
+                              className="text-xs text-indigo-600 border border-indigo-200 px-2 py-1 rounded hover:bg-indigo-50 transition"
+                            >
+                              + Bài tập
+                            </button>
+                          </>
                         )}
                         <button
                           onClick={() => handleDeleteVideo(lesson.id)}
@@ -381,13 +392,15 @@ const EditCoursePage = () => {
                         </button>
                       </div>
 
-                      {/* Form thêm bài tập */}
+                      {/* 🔥 FORM THÊM BÀI TẬP (ĐÃ CẬP NHẬT) */}
                       {showExerciseForm === lesson.id && (
                         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl">
+                          <div className="bg-white p-6 rounded-xl w-full max-w-md shadow-2xl animate-scale-up">
                             <h3 className="font-bold text-lg mb-4 text-gray-800">
-                              Thêm bài tập
+                              Thêm bài tập cho: {lesson.title}
                             </h3>
+
+                            {/* 1. Tiêu đề */}
                             <input
                               className="w-full border p-3 rounded-lg mb-3 outline-none focus:ring-2 focus:ring-indigo-500"
                               placeholder="Tiêu đề bài tập"
@@ -399,9 +412,38 @@ const EditCoursePage = () => {
                                 })
                               }
                             />
+
+                            {/* 2. Loại bài tập */}
+                            <select
+                              className="w-full border p-3 rounded-lg mb-3 outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                              value={exerciseData.type}
+                              onChange={(e) =>
+                                setExerciseData({
+                                  ...exerciseData,
+                                  type: e.target.value,
+                                })
+                              }
+                            >
+                              <option value="WRITING">Tự luận (Writing)</option>
+                              <option value="VOCABULARY">
+                                Từ vựng (Vocabulary)
+                              </option>
+                              <option value="GRAMMAR">
+                                Ngữ pháp (Grammar)
+                              </option>
+                              <option value="READING">
+                                Đọc hiểu (Reading)
+                              </option>
+                              <option value="LISTENING">
+                                Nghe (Listening)
+                              </option>
+                              <option value="SPEAKING">Nói (Speaking)</option>
+                            </select>
+
+                            {/* 3. Mô tả */}
                             <textarea
-                              className="w-full border p-3 rounded-lg mb-4 outline-none focus:ring-2 focus:ring-indigo-500"
-                              placeholder="Mô tả"
+                              className="w-full border p-3 rounded-lg mb-3 outline-none focus:ring-2 focus:ring-indigo-500"
+                              placeholder="Mô tả / Câu hỏi"
                               rows="3"
                               value={exerciseData.description}
                               onChange={(e) =>
@@ -411,6 +453,24 @@ const EditCoursePage = () => {
                                 })
                               }
                             />
+
+                            {/* 4. Upload File */}
+                            <div className="mb-4">
+                              <label className="block text-sm font-medium text-gray-700 mb-1">
+                                File đề bài (Tùy chọn)
+                              </label>
+                              <input
+                                type="file"
+                                className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                onChange={(e) =>
+                                  setExerciseData({
+                                    ...exerciseData,
+                                    file: e.target.files[0],
+                                  })
+                                }
+                              />
+                            </div>
+
                             <div className="flex justify-end gap-3">
                               <button
                                 onClick={() => setShowExerciseForm(null)}
@@ -422,7 +482,7 @@ const EditCoursePage = () => {
                                 onClick={() => handleAddExercise(lesson.id)}
                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
                               >
-                                Lưu
+                                Lưu bài tập
                               </button>
                             </div>
                           </div>
@@ -436,6 +496,7 @@ const EditCoursePage = () => {
         </div>
       </div>
 
+      {/* Edit Modal */}
       <CourseModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -443,6 +504,7 @@ const EditCoursePage = () => {
         initialData={course}
       />
 
+      {/* Video Preview Modal */}
       {previewVideo && (
         <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-50 p-4 animate-fadeIn">
           <div className="w-full max-w-4xl bg-black rounded-lg overflow-hidden shadow-2xl relative">

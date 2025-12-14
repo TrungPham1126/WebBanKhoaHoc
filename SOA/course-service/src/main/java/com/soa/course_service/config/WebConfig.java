@@ -4,22 +4,32 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.nio.file.Paths;
-
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
         @Override
         public void addResourceHandlers(ResourceHandlerRegistry registry) {
 
-                String uploadPath = Paths.get("uploads").toFile().getAbsolutePath();
+                // 📌 Lấy đường dẫn gốc project course-service
+                String projectRoot = System.getProperty("user.dir");
 
+                String uploadPath = "file:" + projectRoot + "/uploads/";
+
+                System.out.println(">>> UPLOAD PATH = " + uploadPath);
+
+                // HLS
                 registry.addResourceHandler("/hls/**")
-                                .addResourceLocations("file:" + uploadPath + "/hls/");
-                registry.addResourceHandler("/exercises/**")
-                                .addResourceLocations("file:" + uploadPath + "/exercises/");
+                                .addResourceLocations(uploadPath + "hls/")
+                                .setCachePeriod(0);
 
+                // IMAGES
                 registry.addResourceHandler("/images/**")
-                                .addResourceLocations("file:" + uploadPath + "/images/");
+                                .addResourceLocations(uploadPath + "images/")
+                                .setCachePeriod(3600);
+
+                // EXERCISES
+                registry.addResourceHandler("/exercises/**")
+                                .addResourceLocations(uploadPath + "exercises/")
+                                .setCachePeriod(3600);
         }
 }
