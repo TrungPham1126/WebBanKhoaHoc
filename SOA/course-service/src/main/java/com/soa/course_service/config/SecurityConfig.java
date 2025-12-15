@@ -49,7 +49,7 @@ public class SecurityConfig {
                         // Xem khóa học
                         .requestMatchers(HttpMethod.GET, "/api/v1/courses/**").permitAll()
 
-                        // 🔥 API NỘI BỘ: TĂNG HỌC VIÊN (Cho phép Enrollment Service gọi)
+                        // API NỘI BỘ: TĂNG HỌC VIÊN (Cho phép Enrollment Service gọi)
                         .requestMatchers(HttpMethod.PUT, "/api/v1/courses/*/increment-student").permitAll()
 
                         // ================== AUTH REQUIRED ==================

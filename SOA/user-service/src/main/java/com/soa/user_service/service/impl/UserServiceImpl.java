@@ -11,6 +11,8 @@ import com.soa.user_service.repository.RoleRepository;
 import com.soa.user_service.repository.UserRepository;
 import com.soa.user_service.service.UserService;
 
+import lombok.Value;
+
 import org.springframework.beans.factory.annotation.Autowired; // Cần import cái này
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -142,4 +144,5 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         System.out.println("✅ User " + email + " successfully upgraded to TEACHER.");
     }
+
 }

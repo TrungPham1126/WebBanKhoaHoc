@@ -34,6 +34,7 @@ import com.soa.user_service.repository.UserRepository;
 import com.soa.user_service.security.services.UserDetailsImpl;
 import com.soa.user_service.service.AuthService;
 import com.soa.user_service.util.JwtUtils;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -45,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final PasswordResetTokenRepository tokenRepository;
     private final RabbitTemplate rabbitTemplate;
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     // Constructor Injection
     public AuthServiceImpl(UserRepository userRepository,
@@ -112,40 +115,6 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void forgotPassword(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy user với email: " + email));
-
-        // 1. Tạo Token
-        String token = UUID.randomUUID().toString();
-
-        // 2. Lưu vào DB
-        PasswordResetToken myToken = new PasswordResetToken(token, user);
-        tokenRepository.save(myToken);
-
-        // 3. Tạo nội dung email
-        String resetLink = "http://localhost:5173/reset-password?token=" + token;
-        String emailBody = "Xin chào " + user.getFullName() + ",\n\n" +
-                "Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng click vào link bên dưới:\n" +
-                resetLink + "\n\n" +
-                "Link này sẽ hết hạn sau 15 phút.";
-
-        // 4. Tạo message
-        NotificationMessageDTO message = new NotificationMessageDTO(
-                user.getEmail(),
-                "Yêu cầu đặt lại mật khẩu",
-                emailBody);
-
-        // 5. Gửi sang RabbitMQ
-        try {
-            rabbitTemplate.convertAndSend("notification_queue", message);
-            System.out.println(">>> Đã gửi tin nhắn reset password sang RabbitMQ");
-        } catch (Exception e) {
-            System.err.println("!!! Lỗi gửi RabbitMQ: " + e.getMessage());
-        }
-    }
-
-    @Override
     public void resetPassword(String token, String newPassword) {
         // 1. Tìm và kiểm tra Token
         PasswordResetToken resetToken = tokenRepository.findByToken(token)
@@ -186,5 +155,44 @@ public class AuthServiceImpl implements AuthService {
                 .map(r -> r.getName().name())
                 .collect(Collectors.toSet()));
         return dto;
+    }
+
+    @Override
+    @Transactional // [THÊM] Đảm bảo tính toàn vẹn dữ liệu
+    public void forgotPassword(String email) {
+        // [SỬA] Chống dò tìm user: Dùng findByEmail nhưng không throw exception ngay
+        User user = userRepository.findByEmail(email).orElse(null);
+
+        if (user == null) {
+            // Nếu không tìm thấy user, ta chỉ log lại (nội bộ) và return luôn.
+            // Hacker sẽ thấy API trả về 200 OK giống hệt như khi có user -> Không biết được
+            // email này tồn tại hay không.
+            System.out.println("User not found for email: " + email);
+            return;
+        }
+
+        // 1. Tạo Token
+        String token = UUID.randomUUID().toString();
+
+        // 2. Lưu vào DB
+        PasswordResetToken myToken = new PasswordResetToken(token, user);
+        tokenRepository.save(myToken);
+
+        // 3. Tạo nội dung email (Dùng biến frontendUrl thay vì hardcode localhost)
+        String resetLink = frontendUrl + "/reset-password?token=" + token;
+
+        String emailBody = "Xin chào " + user.getFullName() + ",\n\n" +
+                "Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng click vào link bên dưới:\n" +
+                resetLink + "\n\n" +
+                "Link này sẽ hết hạn sau 15 phút.";
+
+        // 4. Tạo message
+        NotificationMessageDTO message = new NotificationMessageDTO(
+                user.getEmail(),
+                "Yêu cầu đặt lại mật khẩu",
+                emailBody);
+
+        // 5. Gửi RabbitMQ
+        rabbitTemplate.convertAndSend("notification_queue", message);
     }
 }

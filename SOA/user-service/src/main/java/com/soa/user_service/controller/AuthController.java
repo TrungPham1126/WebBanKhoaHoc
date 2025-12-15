@@ -1,8 +1,10 @@
 package com.soa.user_service.controller;
 
+import com.soa.user_service.dto.ForgotPasswordRequestDTO;
 import com.soa.user_service.dto.LoginRequestDTO;
 import com.soa.user_service.dto.LoginResponseDTO;
 import com.soa.user_service.dto.RegisterRequestDTO;
+import com.soa.user_service.dto.ResetPasswordRequestDTO;
 import com.soa.user_service.dto.UserResponseDTO;
 import com.soa.user_service.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,14 +39,18 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@RequestParam String email) {
-        authService.forgotPassword(email);
-        return ResponseEntity.ok("Vui lòng kiểm tra email để đặt lại mật khẩu.");
+    // [KHẮC PHỤC] Dùng @RequestBody và DTO để đọc email từ JSON Body
+    public ResponseEntity<String> forgotPassword(@RequestBody ForgotPasswordRequestDTO request) {
+        // Gọi service với email từ request
+        authService.forgotPassword(request.getEmail());
+
+        // Trả về thông báo thành công (chống User Enumeration)
+        return ResponseEntity.ok("Nếu email tồn tại, chúng tôi đã gửi hướng dẫn khôi phục mật khẩu.");
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(@RequestParam String token, @RequestParam String newPassword) {
-        authService.resetPassword(token, newPassword);
+    public ResponseEntity<String> resetPassword(@RequestBody ResetPasswordRequestDTO request) {
+        authService.resetPassword(request.getToken(), request.getNewPassword());
         return ResponseEntity.ok("Đặt lại mật khẩu thành công!");
     }
 

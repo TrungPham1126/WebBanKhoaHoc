@@ -16,8 +16,6 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     List<Course> findByStatus(CourseStatus status);
 
-    // 🔥 FIX LỖI 500: Dùng Native Query SQL thuần để đảm bảo hàm DATE_FORMAT chạy
-    // đúng trên MySQL
     @Query(value = "SELECT DATE_FORMAT(created_at, '%d/%m') as label, COUNT(*) as value " +
             "FROM courses " +
             // Điều kiện lấy dữ liệu trong 30 ngày qua
