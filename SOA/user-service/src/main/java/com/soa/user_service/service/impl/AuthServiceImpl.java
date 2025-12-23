@@ -158,41 +158,49 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional // [THÊM] Đảm bảo tính toàn vẹn dữ liệu
+    @Transactional
     public void forgotPassword(String email) {
-        // [SỬA] Chống dò tìm user: Dùng findByEmail nhưng không throw exception ngay
+        // 1. Tìm user theo email (tránh trả về lỗi ngay để bảo mật)
         User user = userRepository.findByEmail(email).orElse(null);
 
         if (user == null) {
-            // Nếu không tìm thấy user, ta chỉ log lại (nội bộ) và return luôn.
-            // Hacker sẽ thấy API trả về 200 OK giống hệt như khi có user -> Không biết được
-            // email này tồn tại hay không.
+            // Nếu không tìm thấy, log lại và kết thúc giả vờ thành công
             System.out.println("User not found for email: " + email);
             return;
         }
+        // 2. Kiểm tra xem user này đã có token cũ chưa
+        java.util.Optional<PasswordResetToken> oldToken = tokenRepository.findByUser(user);
 
-        // 1. Tạo Token
+        // Nếu có thì XÓA đi để tránh lỗi "Duplicate entry"
+        if (oldToken.isPresent()) {
+            tokenRepository.delete(oldToken.get());
+            tokenRepository.flush(); // Ép buộc xóa ngay lập tức trong Database
+        }
+        // 3. Tạo Token mới
         String token = UUID.randomUUID().toString();
 
-        // 2. Lưu vào DB
+        // 4. Lưu Token mới vào DB
         PasswordResetToken myToken = new PasswordResetToken(token, user);
         tokenRepository.save(myToken);
 
-        // 3. Tạo nội dung email (Dùng biến frontendUrl thay vì hardcode localhost)
+        // 5. Tạo link reset mật khẩu
         String resetLink = frontendUrl + "/reset-password?token=" + token;
 
+        // 6. Soạn nội dung email
         String emailBody = "Xin chào " + user.getFullName() + ",\n\n" +
                 "Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng click vào link bên dưới:\n" +
                 resetLink + "\n\n" +
                 "Link này sẽ hết hạn sau 15 phút.";
 
-        // 4. Tạo message
+        // 7. Tạo message để gửi đi
         NotificationMessageDTO message = new NotificationMessageDTO(
                 user.getEmail(),
                 "Yêu cầu đặt lại mật khẩu",
                 emailBody);
 
-        // 5. Gửi RabbitMQ
+        // 8. Đẩy vào hàng đợi RabbitMQ để Notification Service gửi mail
         rabbitTemplate.convertAndSend("notification_queue", message);
+
+        System.out.println(">>> Đã gửi yêu cầu reset password cho: " + email);
     }
 }
